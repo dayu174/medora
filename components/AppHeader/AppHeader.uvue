@@ -1,0 +1,36 @@
+<template>
+  <view :class="compact ? 'top-bar top-bar-compact' : 'top-bar'">
+    <view v-if="back" class="back-hit" @tap="goBack">
+      <text class="back-icon">‹</text>
+    </view>
+    <text v-if="brand" class="brand-title">{{ title }}</text>
+    <text v-if="!brand" class="header-title">{{ title }}</text>
+    <view v-if="brand" class="header-fill"></view>
+    <view v-if="actionIcon.length > 0" class="header-action" @tap="tapAction">
+      <image class="header-action-image" :src="actionIcon" mode="aspectFit"></image>
+    </view>
+    <text v-if="actionIcon.length == 0 && action.length > 0" class="header-action" @tap="tapAction">{{ action }}</text>
+    <view v-if="back" class="back-hit"></view>
+  </view>
+</template>
+
+<script lang="uts">
+export default {
+  props: {
+    title: { type: String, default: 'Medora' },
+    brand: { type: Boolean, default: false },
+    back: { type: Boolean, default: false },
+    compact: { type: Boolean, default: false },
+    action: { type: String, default: '' },
+    actionIcon: { type: String, default: '' }
+  },
+  methods: {
+    goBack() {
+      uni.navigateBack()
+    },
+    tapAction() {
+      this.$emit('action')
+    }
+  }
+}
+</script>

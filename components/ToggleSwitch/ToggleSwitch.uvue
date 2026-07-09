@@ -1,0 +1,40 @@
+<template>
+  <view :class="modelValue ? 'switcher switcher-on' : 'switcher'" @tap="toggle">
+    <view :class="modelValue ? 'switcher-knob switcher-knob-on' : 'switcher-knob'"></view>
+  </view>
+</template>
+
+<script lang="uts">
+export default {
+  props: {
+    modelValue: { type: Boolean, default: false }
+  },
+  methods: {
+    toggle() {
+      this.$emit('update:modelValue', !this.modelValue)
+    }
+  }
+}
+</script>
+
+<style scoped>
+.switcher {
+  width: 50px;
+  height: 28px;
+  padding: 2px;
+  border-radius: 14px;
+  background-color: #d1d5d4;
+}
+.switcher-on {
+  background-color: #3b5e5b;
+}
+.switcher-knob {
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  background-color: #ffffff;
+}
+.switcher-knob-on {
+  margin-left: 22px;
+}
+</style>

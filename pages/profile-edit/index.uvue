@@ -1,0 +1,52 @@
+<template>
+  <view class="app-page safe-top">
+    <view class="phone-frame">
+      <AppHeader title="个人资料" :back="true" />
+      <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
+        <view class="profile-edit-head">
+          <view class="avatar"><text class="avatar-text">张</text></view>
+          <text class="profile-name">张医生</text>
+          <text class="profile-role">主治医师 · 心内科</text>
+        </view>
+        <view class="content">
+          <view class="form-field"><text class="label">姓名</text><input class="input-box" v-model="name" /></view>
+          <view class="form-field">
+            <text class="label">性别</text>
+            <view class="gender-row">
+              <text :class="gender == '男' ? 'ghost-button ghost-button-active gender-button' : 'ghost-button gender-button'" @tap="gender = '男'">男</text>
+              <text :class="gender == '女' ? 'ghost-button ghost-button-active gender-button' : 'ghost-button gender-button'" @tap="gender = '女'">女</text>
+            </view>
+          </view>
+          <view class="form-field"><text class="label">所属医院</text><input class="input-box" v-model="hospital" /></view>
+          <view class="form-field"><text class="label">科室</text><input class="input-box" v-model="department" /></view>
+          <text class="primary-button save-button">保存修改</text>
+        </view>
+      </scroll-view>
+      <BottomTabs active="profile" />
+    </view>
+  </view>
+</template>
+
+<script lang="uts">
+import AppHeader from '../../components/AppHeader/AppHeader.uvue'
+import BottomTabs from '../../components/BottomTabs/BottomTabs.uvue'
+
+export default {
+  components: { AppHeader, BottomTabs },
+  data() {
+    return { name: '张医生', gender: '男', hospital: '第一人民医院', department: '心血管内科' }
+  }
+}
+</script>
+
+<style scoped>
+.profile-edit-head { padding-top: 24px; padding-bottom: 12px; display: flex; flex-direction: column; align-items: center; }
+.avatar { width: 88px; height: 88px; border-radius: 44px; background-color: #3b5e5b; display: flex; flex-direction: row; align-items: center; justify-content: center; }
+.avatar-text { color: #ffffff; font-size: 30px; line-height: 40px; font-weight: 700; }
+.profile-name { margin-top: 12px; color: #1a1c1c; font-size: 24px; line-height: 32px; font-weight: 700; }
+.profile-role { color: #414847; font-size: 14px; line-height: 20px; }
+.form-field { margin-bottom: 18px; }
+.gender-row { display: flex; flex-direction: row; }
+.gender-button { margin-right: 8px; }
+.save-button { margin-top: 12px; }
+</style>

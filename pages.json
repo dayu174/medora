@@ -1,0 +1,78 @@
+{
+  "pages": [
+    {
+      "path": "pages/home/index",
+      "style": {
+        "navigationBarTitleText": "Medora",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/library/index",
+      "style": {
+        "navigationBarTitleText": "资料库",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/knowledge-detail/index",
+      "style": {
+        "navigationBarTitleText": "心力衰竭",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/record/index",
+      "style": {
+        "navigationBarTitleText": "记录发现",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/calculator/index",
+      "style": {
+        "navigationBarTitleText": "医学计算器",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/profile/index",
+      "style": {
+        "navigationBarTitleText": "我的",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/settings/index",
+      "style": {
+        "navigationBarTitleText": "设置",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/account-security/index",
+      "style": {
+        "navigationBarTitleText": "账号与安全",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/notifications/index",
+      "style": {
+        "navigationBarTitleText": "消息通知",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/profile-edit/index",
+      "style": {
+        "navigationBarTitleText": "个人资料",
+        "navigationStyle": "custom"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationStyle": "custom",
+    "backgroundColor": "#faf9f9"
+  }
+}

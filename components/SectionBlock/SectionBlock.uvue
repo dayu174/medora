@@ -1,0 +1,33 @@
+<template>
+  <view class="section-block">
+    <text class="section-heading">{{ title }}</text>
+    <view class="section-body">
+      <slot></slot>
+    </view>
+  </view>
+</template>
+
+<script lang="uts">
+export default {
+  props: {
+    title: { type: String, default: '' }
+  }
+}
+</script>
+
+<style scoped>
+.section-block {
+  margin-bottom: 24px;
+}
+.section-heading {
+  margin-bottom: 12px;
+  color: #3b5e5b;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 700;
+}
+.section-body {
+  display: flex;
+  flex-direction: column;
+}
+</style>

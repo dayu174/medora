@@ -1,0 +1,26 @@
+export function calculateBmi(heightCm, weightKg) {
+  const height = Number(heightCm)
+  const weight = Number(weightKg)
+  if (!Number.isFinite(height) || !Number.isFinite(weight) || height <= 0 || weight <= 0) {
+    return ''
+  }
+  const meters = height / 100
+  return (weight / (meters * meters)).toFixed(1)
+}
+
+export function getBmiStatus(bmiValue) {
+  const bmi = Number(bmiValue)
+  if (!Number.isFinite(bmi) || bmi <= 0) {
+    return { label: '等待计算', tone: 'neutral', suggestion: '请输入身高和体重' }
+  }
+  if (bmi < 18.5) {
+    return { label: '偏瘦', tone: 'warning', suggestion: '建议结合饮食与临床情况评估' }
+  }
+  if (bmi < 24) {
+    return { label: '正常范围', tone: 'success', suggestion: '继续保持健康生活方式' }
+  }
+  if (bmi < 28) {
+    return { label: '超重', tone: 'warning', suggestion: '建议关注代谢与心血管风险' }
+  }
+  return { label: '肥胖', tone: 'danger', suggestion: '建议进一步评估相关风险' }
+}

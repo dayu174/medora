@@ -1,0 +1,275 @@
+<!DOCTYPE html><html class="light" lang="zh-CN" style=""><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet"><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">try{
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-container": "#596765",
+                    "inverse-surface": "#2f3131",
+                    "on-error-container": "#93000a",
+                    "outline-variant": "#c1c8c6",
+                    "on-primary-container": "#d7fef9",
+                    "inverse-on-surface": "#f1f1f0",
+                    "primary-fixed-dim": "#a8cec9",
+                    "tertiary-fixed-dim": "#eebbaa",
+                    "tertiary": "#754f41",
+                    "tertiary-container": "#906758",
+                    "on-tertiary-container": "#fff4f0",
+                    "on-secondary-fixed-variant": "#3c4948",
+                    "surface-dim": "#dadada",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-variant": "#e3e2e2",
+                    "error": "#ba1a1a",
+                    "surface-container-highest": "#e3e2e2",
+                    "on-tertiary": "#ffffff",
+                    "on-surface": "#1a1c1c",
+                    "surface-container-low": "#f4f3f3",
+                    "on-surface-variant": "#414847",
+                    "on-primary": "#ffffff",
+                    "surface-container": "#eeeeed",
+                    "on-primary-fixed": "#00201e",
+                    "on-tertiary-fixed": "#2f1409",
+                    "surface-tint": "#416561",
+                    "outline": "#717977",
+                    "secondary-fixed": "#d7e6e3",
+                    "on-primary-fixed-variant": "#294d49",
+                    "on-background": "#1a1c1c",
+                    "primary": "#3b5e5b",
+                    "secondary-fixed-dim": "#bbc9c7",
+                    "on-error": "#ffffff",
+                    "inverse-primary": "#a8cec9",
+                    "tertiary-fixed": "#ffdbce",
+                    "surface-bright": "#faf9f9",
+                    "on-secondary-fixed": "#111e1d",
+                    "error-container": "#ffdad6",
+                    "primary-fixed": "#c4eae5",
+                    "primary-container": "#537773",
+                    "on-tertiary-fixed-variant": "#613e31",
+                    "secondary": "#53615f",
+                    "background": "#faf9f9",
+                    "on-secondary": "#ffffff",
+                    "secondary-container": "#d7e6e3",
+                    "surface-container-high": "#e8e8e8",
+                    "surface": "#faf9f9"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-margin": "24px",
+                    "section-gap": "48px",
+                    "stack-lg": "32px",
+                    "gutter": "16px",
+                    "stack-md": "16px",
+                    "stack-sm": "8px",
+                    "unit": "4px"
+            },
+            "fontFamily": {
+                    "display-lg": [
+                            "Manrope"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ],
+                    "body-lg": [
+                            "Inter"
+                    ],
+                    "label-caps": [
+                            "JetBrains Mono"
+                    ],
+                    "display-lg-mobile": [
+                            "Manrope"
+                    ],
+                    "body-sm": [
+                            "Inter"
+                    ],
+                    "headline-md": [
+                            "Manrope"
+                    ]
+            },
+            "fontSize": {
+                    "display-lg": [
+                            "40px",
+                            {
+                                    "lineHeight": "48px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-caps": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.05em",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "display-lg-mobile": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-sm": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "600"
+                            }
+                    ]
+            }
+        },
+        },
+      }
+    }catch(_e){}</script></head><body class="antialiased min-h-screen flex flex-col font-body-md text-body-md relative pb-[114px]">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky bg-surface dark:bg-surface-dim z-40">
+<div class="flex items-center justify-between px-container-margin py-stack-md max-w-[1024px] mx-auto bg-surface dark:bg-surface-dim">
+<button class="hover:opacity-80 transition-opacity scale-95 active:transition-transform flex items-center justify-center p-2 rounded-full text-on-surface-variant dark:text-surface-variant">
+</button>
+<button class="hover:opacity-80 transition-opacity scale-95 active:transition-transform flex items-center justify-center p-2 rounded-full text-on-surface-variant dark:text-surface-variant">
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow w-full max-w-[1024px] mx-auto px-container-margin py-stack-lg flex flex-col gap-stack-md">
+<!-- Header Intent -->
+<section class="flex flex-col gap-stack-sm">
+<h2 class="font-headline-md text-headline-md text-primary">记录发现</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant opacity-80">采集数据并添加临床笔记。</p>
+</section>
+<!-- Department Selection -->
+<section class="w-full flex flex-col gap-stack-sm">
+<label class="font-label-caps text-label-caps text-on-surface-variant tracking-wider">科室选择</label>
+<div class="flex overflow-x-auto pb-2 gap-2 hide-scrollbar">
+<button class="flex-none px-4 py-2 rounded-full bg-primary text-on-primary font-body-sm whitespace-nowrap">内科</button>
+<button class="flex-none px-4 py-2 rounded-full bg-surface-container text-on-surface-variant border border-outline-variant font-body-sm whitespace-nowrap">外科</button>
+<button class="flex-none px-4 py-2 rounded-full bg-surface-container text-on-surface-variant border border-outline-variant font-body-sm whitespace-nowrap">儿科</button>
+<button class="flex-none px-4 py-2 rounded-full bg-surface-container text-on-surface-variant border border-outline-variant font-body-sm whitespace-nowrap">妇产科</button>
+<button class="flex-none px-4 py-2 rounded-full bg-surface-container text-on-surface-variant border border-outline-variant font-body-sm whitespace-nowrap">其他</button>
+</div>
+</section>
+<!-- Disease Name -->
+<section class="w-full flex flex-col gap-stack-sm">
+<label class="font-label-caps text-label-caps text-on-surface-variant tracking-wider" for="disease-name">疾病名称</label>
+<input class="w-full bg-surface-container rounded-lg border border-outline-variant px-4 py-3 font-body-md text-body-md text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-colors" id="disease-name" placeholder="输入疾病名称..." type="text">
+</section>
+<!-- Image Input Area -->
+<section class="w-full"><button class="w-full py-4 px-6 rounded-lg bg-transparent border border-outline text-primary font-label-caps text-label-caps tracking-wider flex items-center justify-center gap-2 hover:bg-surface-container-low transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined text-[20px]">add_a_photo</span>
+    点击拍摄或上传
+</button></section>
+<!-- Text Input Area -->
+<section class="w-full flex flex-col gap-stack-md pt-4 border-t border-outline-variant/30"><div class="flex flex-col gap-stack-md">
+  <div class="flex items-center justify-between">
+    <h3 class="font-bold text-body-sm text-on-surface-variant uppercase tracking-wider">临床笔记</h3>
+    <button class="flex items-center gap-1 px-2 py-1 rounded-full bg-primary-container/10 text-primary text-[12px] font-medium hover:bg-primary-container/20 transition-colors">
+      <span class="material-symbols-outlined text-[14px]">auto_awesome</span>
+      智能归档
+    </button>
+  </div>
+
+  <div class="flex flex-col gap-1">
+    <label class="text-[12px] font-medium text-on-surface-variant" for="general-notes">详细笔记</label>
+    <textarea class="w-full bg-surface-container-low rounded-lg border border-outline-variant/30 px-4 py-3 font-body-sm text-body-sm text-on-surface resize-none focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" id="general-notes" placeholder="在此输入详细临床笔记..." rows="4"></textarea>
+  </div>
+
+  <div class="grid grid-cols-2 gap-4">
+    <div class="flex flex-col gap-1">
+      <label class="text-[12px] font-medium text-on-surface-variant" for="symptoms">症状</label>
+      <textarea class="w-full bg-surface-container-low rounded-lg border border-outline-variant/30 px-3 py-2 font-body-sm text-body-sm text-on-surface resize-none focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" id="symptoms" placeholder="描述症状..." rows="2"></textarea>
+    </div>
+    <div class="flex flex-col gap-1">
+      <label class="text-[12px] font-medium text-on-surface-variant" for="treatment">用药/方案</label>
+      <textarea class="w-full bg-surface-container-low rounded-lg border border-outline-variant/30 px-3 py-2 font-body-sm text-body-sm text-on-surface resize-none focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all" id="treatment" placeholder="记录方案..." rows="2"></textarea>
+    </div>
+  </div>
+
+  <div class="flex flex-col gap-stack-sm">
+    <label class="font-label-caps text-label-caps text-on-surface-variant tracking-wider">标签（可选）</label>
+    <div class="flex flex-wrap gap-2">
+      <button class="px-3 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant text-xs font-medium border border-outline-variant/30 flex items-center gap-1 hover:bg-surface-container-highest transition-colors">
+        <span class="material-symbols-outlined text-[14px]">add</span>
+        添加标签
+      </button>
+    </div>
+  </div>
+</div></section>
+<!-- Action Buttons -->
+<section class="w-full flex flex-col sm:flex-row gap-stack-md pt-stack-sm mt-4">
+<button class="flex-1 py-4 px-6 rounded-lg bg-transparent border border-outline text-secondary font-label-caps text-label-caps tracking-wider flex items-center justify-center gap-2 hover:bg-surface-container-low transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined text-[20px]">document_scanner</span>
+                扫描文档
+            </button>
+<button class="flex-1 py-4 px-6 rounded-lg bg-primary text-on-primary font-label-caps text-label-caps tracking-wider flex items-center justify-center gap-2 hover:bg-primary/90 shadow-sm transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined text-[20px]">save</span>
+                保存记录
+            </button>
+</section>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden bg-surface dark:bg-inverse-surface docked full-width bottom-0 shadow-sm fixed left-0 w-full z-50 flex justify-around items-center px-4 py-2 pb-[34px]">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant opacity-60 transition-all duration-200 active:scale-90 hover:bg-surface-container-low dark:hover:bg-surface-container-highest rounded-lg p-2" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-caps text-[10px] mt-1">首页</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant opacity-60 transition-all duration-200 active:scale-90 hover:bg-surface-container-low dark:hover:bg-surface-container-highest rounded-lg p-2" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="font-label-caps text-[10px] mt-1">资料库<br></span>
+</a>
+
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant opacity-60 transition-all duration-200 active:scale-90 hover:bg-surface-container-low dark:hover:bg-surface-container-highest rounded-lg p-2" href="#">
+<img alt="Profile" class="w-6 h-6 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDyV7er2pn_7OFvkjuAm8bvwvFSpcEuVNkcNJehfV5f_nFDi2y4UDGOaWfV2DAVBbNxpH2m22p2L2_gjbsFvPB_L_T7rpufVl8Z3NIuU36qjUgbQbhMgzcr0N4aSY2of3u2iJw4DM76alnn5Z41btmW1L6DRB7RQqYIljgeT5bAi7oIVV8WcBwEJJGt8LgtjSVTKHKurpWO4cOqE2vu5bpE_9CFUQvr0yijyuI-wIx6BEer1PnJzDS">
+<span class="font-label-caps text-[10px] mt-1">我的</span>
+</a>
+</nav>
+<style>
+    .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+</style>
+<script class="">
+        // Simple interactions for visual feedback
+        document.querySelectorAll('textarea, input').forEach(input => {
+            input.addEventListener('focus', () => {
+                // Focus styling handled by Tailwind
+            });
+        });
+</script>
+
+
+
+
+
+
+</body></html>

@@ -1,0 +1,31 @@
+<template>
+  <view class="bottom-nav">
+    <view v-for="tab in tabs" :key="tab.key" :class="active == tab.key ? 'tab-item tab-item-active' : 'tab-item'" @tap="go(tab.path)">
+      <image v-if="tab.avatar.length > 0" class="tab-avatar" :src="tab.avatar" mode="aspectFill"></image>
+      <image v-if="tab.avatar.length == 0" class="tab-icon" :src="active == tab.key ? tab.activeIcon : tab.icon" mode="aspectFit"></image>
+      <text class="tab-text">{{ tab.text }}</text>
+    </view>
+  </view>
+</template>
+
+<script lang="uts">
+import { tabs } from '../../common/medora-data.uts'
+
+export default {
+  props: {
+    active: { type: String, default: 'home' }
+  },
+  data() {
+    return {
+      tabs: tabs
+    }
+  },
+  methods: {
+    go(path) {
+      if (path.length > 0) {
+        uni.redirectTo({ url: path })
+      }
+    }
+  }
+}
+</script>

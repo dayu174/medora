@@ -1,0 +1,281 @@
+<!DOCTYPE html><html class="light" lang="zh-CN" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>账号与安全 - Medora</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@400;500;600;700&amp;family=Geist:wght@500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#e2e3df",
+                        "outline-variant": "#c3c8bf",
+                        "surface-tint": "#4a654d",
+                        "inverse-surface": "#2f312f",
+                        "on-background": "#1a1c1a",
+                        "on-secondary-fixed-variant": "#414845",
+                        "inverse-on-surface": "#f1f1ed",
+                        "primary-container": "#5f7a61",
+                        "secondary-fixed": "#dde4df",
+                        "secondary": "#59605c",
+                        "error-container": "#ffdad6",
+                        "on-primary": "#ffffff",
+                        "inverse-primary": "#b1ceb1",
+                        "on-primary-fixed": "#07200e",
+                        "tertiary": "#505e54",
+                        "surface-bright": "#faf9f6",
+                        "secondary-container": "#dde4df",
+                        "outline": "#737971",
+                        "surface-container-high": "#e8e8e5",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed": "#d6e7d9",
+                        "on-tertiary-fixed": "#111e16",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#efffec",
+                        "primary-fixed": "#cceacc",
+                        "on-tertiary-fixed-variant": "#3c4a40",
+                        "surface-container-highest": "#e2e3df",
+                        "on-secondary": "#ffffff",
+                        "surface-dim": "#dadad7",
+                        "on-surface": "#1a1c1a",
+                        "on-primary-fixed-variant": "#334d36",
+                        "background": "#faf9f6",
+                        "surface-container": "#eeeeea",
+                        "tertiary-fixed-dim": "#bacbbd",
+                        "on-secondary-fixed": "#161d1a",
+                        "on-surface-variant": "#434842",
+                        "primary": "#47614a",
+                        "error": "#ba1a1a",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#68776c",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed-dim": "#c1c8c3",
+                        "surface-container-low": "#f4f4f0",
+                        "primary-fixed-dim": "#b1ceb1",
+                        "on-secondary-container": "#5f6662",
+                        "surface": "#faf9f6",
+                        "on-tertiary-container": "#eefff0"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "unit": "8px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "40px",
+                        "container-max": "1200px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Inter", "sans-serif"],
+                        "label-md": ["Geist", "sans-serif"],
+                        "headline-lg-mobile": ["Manrope", "sans-serif"],
+                        "headline-lg": ["Manrope", "sans-serif"],
+                        "display-lg": ["Manrope", "sans-serif"],
+                        "body-md": ["Inter", "sans-serif"],
+                        "headline-md": ["Manrope", "sans-serif"],
+                        "headline-md-mobile": ["Manrope", "sans-serif"],
+                        "label-caps": ["Geist", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+                        "headline-md-mobile": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "label-caps": ["10px", { "lineHeight": "14px", "letterSpacing": "0.1em", "fontWeight": "600", "textTransform": "uppercase" }]
+                    },
+                    "boxShadow": {
+                        'elevation-1': '0px 4px 20px rgba(95, 122, 97, 0.08)'
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Minimalist scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #dde4df; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #c3c8bf; }
+        
+        /* Smooth transitions for interactive elements */
+        .interactive-card {
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        .interactive-card:active {
+            transform: scale(0.98);
+        }
+        
+        /* Custom Toggle Switch styling */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #47614a; /* primary */
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #47614a; /* primary */
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased min-h-screen flex flex-col items-center justify-start pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="w-full sticky top-0 bg-background dark:bg-background z-40">
+<div class="flex items-center px-[16px] md:px-[40px] h-16 w-full max-w-[1024px] mx-auto flat no shadows">
+<button aria-label="Go back" class="text-primary dark:text-primary-fixed-dim hover:opacity-80 transition-opacity duration-200 mr-4 interactive-card rounded-full p-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+</button>
+<h1 class="font-headline-md-mobile md:font-headline-md text-headline-md-mobile md:text-headline-md text-primary dark:text-primary-fixed-dim">
+                设置
+            </h1>
+<div class="flex-grow"></div>
+<!-- Optional actions could go here, keeping minimalist -->
+</div>
+</header>
+<!-- Main Content Canvas (iPhone 16 Pro width approx max-w-md for demo, but responsive to max-w-[1200px] as per guidelines) -->
+<main class="w-full max-w-[1200px] mx-auto px-margin-mobile md:px-margin-desktop py-unit-3 md:py-unit-6 flex-grow">
+<!-- Page Intent Headline (Sub-header) -->
+<div class="mb-8 mt-2">
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">
+                账号与安全
+            </h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">
+                管理您的登录方式并保护您的健康数据。
+            </p>
+</div>
+<!-- Security Options List (Bento-style grouping, subtle borders) -->
+<section class="space-y-4 max-w-2xl">
+<!-- Group 1: Basic Contact Info -->
+<div class="bg-surface-container-lowest border border-surface-variant rounded-xl overflow-hidden shadow-elevation-1">
+<!-- Phone Number -->
+<div class="flex items-center justify-between p-6 interactive-card hover:bg-secondary-container/10 cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">smartphone</span>
+</div>
+<div>
+<p class="font-body-md text-body-md text-on-surface">手机号</p>
+<div class="flex items-center gap-2 mt-1">
+<span class="font-body-sm text-body-sm text-on-surface-variant">+86 138 **** 5678</span>
+<span class="px-2 py-0.5 rounded-full bg-primary-container/10 text-primary font-label-md text-label-md">已验证</span>
+</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant">chevron_right</span>
+</div>
+<div class="h-px bg-surface-variant w-[calc(100%-48px)] mx-auto"></div>
+<!-- Email -->
+<div class="flex items-center justify-between p-6 interactive-card hover:bg-secondary-container/10 cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">mail</span>
+</div>
+<div>
+<p class="font-body-md text-body-md text-on-surface">电子邮箱</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">未绑定</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-body-sm text-body-sm text-primary">去绑定</span>
+<span class="material-symbols-outlined text-outline-variant">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Group 2: Password & Auth -->
+<div class="bg-surface-container-lowest border border-surface-variant rounded-xl overflow-hidden shadow-elevation-1">
+<!-- Change Password -->
+<div class="flex items-center justify-between p-6 interactive-card hover:bg-secondary-container/10 cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">password</span>
+</div>
+<div>
+<p class="font-body-md text-body-md text-on-surface">修改密码</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">定期修改以保障账号安全</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant">chevron_right</span>
+</div>
+</div>
+<!-- Group 3: Device Security -->
+<div class="bg-surface-container-lowest border border-surface-variant rounded-xl overflow-hidden shadow-elevation-1 mt-6">
+<!-- Biometric Lock Toggle -->
+<div class="flex items-center justify-between p-6">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">face</span>
+</div>
+<div>
+<p class="font-body-md text-body-md text-on-surface">面容 ID / 触控 ID</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">开启后，可使用生物识别解锁应用</p>
+</div>
+</div>
+<!-- Toggle Switch -->
+<div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-2 border-white shadow-sm appearance-none cursor-pointer z-10 transition-all duration-300 top-0" id="biometric-toggle" name="toggle" type="checkbox" placeholder="on" value="">
+<label class="toggle-label block overflow-hidden h-7 rounded-full bg-surface-variant cursor-pointer transition-colors duration-300" for="biometric-toggle"></label>
+</div>
+</div>
+<div class="h-px bg-surface-variant w-[calc(100%-48px)] mx-auto"></div>
+<!-- Active Devices -->
+<div class="flex items-center justify-between p-6 interactive-card hover:bg-secondary-container/10 cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">devices</span>
+</div>
+<div>
+<p class="font-body-md text-body-md text-on-surface">设备管理</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">当前有 1 台设备在线</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant">chevron_right</span>
+</div>
+</div>
+<!-- Danger Zone -->
+<div class="mt-8 text-center pt-8">
+<button class="font-body-md text-body-md text-error hover:text-on-error-container transition-colors duration-200">
+                    注销账号
+                </button>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Hidden on md and up, visible on mobile) -->
+<!-- Context: This is a sub-page (Settings -> Account & Security) which implies a task-focused journey.
+         HOWEVER, the instructions say to use the JSON for BottomNavBar.
+         Wait, The Semantic Shell Mandate: "Automatic Suppression: You MUST exclude the navigation shell if the page intent is: ... Task-Focused: Any sub-page featuring a "Close" or "Back" action that implies a temporary departure from the main navigation flow."
+         Since this page has a "Back" button (arrow_back leading icon in TopAppBar) and is a sub-page of Settings, the BottomNavBar MUST be SUPPRESSED.
+         Therefore, I am excluding the BottomNavBar. -->
+<script>
+        // Simple JS for toggle interaction polish
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggle = document.getElementById('biometric-toggle');
+            if (toggle) {
+                toggle.addEventListener('change', function() {
+                    const label = this.nextElementSibling;
+                    if(this.checked) {
+                        this.style.right = '2px';
+                        this.style.borderColor = '#47614a'; // primary
+                        label.style.backgroundColor = '#47614a';
+                    } else {
+                        this.style.right = '24px';
+                        this.style.borderColor = '#c3c8bf'; // outline-variant
+                        label.style.backgroundColor = '#e2e3df'; // surface-variant
+                    }
+                });
+            }
+        });
+    </script>
+
+
+
+
+</body></html>

@@ -1,0 +1,63 @@
+<template>
+  <view class="app-page safe-top">
+    <view class="phone-frame">
+      <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
+        <view class="profile-hero">
+          <view class="avatar"><text class="avatar-text">张</text></view>
+          <text class="profile-name">张医生</text>
+          <text class="profile-role">第一人民医院 - 实习生</text>
+        </view>
+        <view class="stats-card card">
+          <view v-for="item in stats" :key="item.label" class="stat-item">
+            <text class="stat-value">{{ item.value }}</text>
+            <text class="stat-label">{{ item.label }}</text>
+          </view>
+        </view>
+        <view class="content profile-content">
+          <view class="menu-card card">
+            <SettingRow label="我的收藏" icon="藏" />
+            <view class="divider"></view>
+            <SettingRow label="导出记录" icon="导" />
+            <view class="divider"></view>
+            <SettingRow label="帮助与反馈" icon="帮" />
+            <view class="divider"></view>
+            <SettingRow label="设置" icon="设" path="/pages/settings/index" />
+          </view>
+        </view>
+      </scroll-view>
+      <BottomTabs active="profile" />
+    </view>
+  </view>
+</template>
+
+<script lang="uts">
+import BottomTabs from '../../components/BottomTabs/BottomTabs.uvue'
+import SettingRow from '../../components/SettingRow/SettingRow.uvue'
+
+export default {
+  components: { BottomTabs, SettingRow },
+  data() {
+    return {
+      stats: [
+        { value: '850', label: '知识卡片' },
+        { value: '48', label: '病种记录' },
+        { value: '12', label: '待编辑病种' }
+      ]
+    }
+  }
+}
+</script>
+
+<style scoped>
+.profile-hero { padding-top: 72px; display: flex; flex-direction: column; align-items: center; }
+.avatar { width: 84px; height: 84px; border-radius: 42px; background-color: #3b5e5b; display: flex; flex-direction: row; align-items: center; justify-content: center; }
+.avatar-text { color: #ffffff; font-size: 30px; line-height: 40px; font-weight: 700; }
+.profile-name { margin-top: 16px; color: #1a1c1c; font-size: 24px; line-height: 32px; font-weight: 700; }
+.profile-role { margin-top: 4px; color: #414847; font-size: 14px; line-height: 20px; }
+.stats-card { width: 342px; height: 88px; margin-left: 24px; margin-top: 28px; display: flex; flex-direction: row; align-items: center; justify-content: space-around; }
+.stat-item { width: 100px; display: flex; flex-direction: column; align-items: center; }
+.stat-value { color: #3b5e5b; font-size: 18px; line-height: 26px; font-weight: 700; }
+.stat-label { color: #414847; font-size: 12px; line-height: 16px; }
+.profile-content { padding-top: 28px; }
+.menu-card { overflow: hidden; }
+</style>

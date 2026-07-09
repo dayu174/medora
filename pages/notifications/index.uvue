@@ -1,0 +1,45 @@
+<template>
+  <view class="app-page safe-top">
+    <view class="phone-frame">
+      <AppHeader title="消息通知" :back="true" />
+      <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
+        <view class="content notification-content">
+          <text class="body-text notice-copy">管理您希望接收的通知类型，打造无干扰的体验。</text>
+          <view class="notification-card card">
+            <view v-for="item in items" :key="item.title" class="notification-row">
+              <text class="icon-tile">{{ item.icon }}</text>
+              <view class="notification-copy">
+                <text class="row-title">{{ item.title }}</text>
+                <text class="row-desc">{{ item.desc }}</text>
+              </view>
+              <ToggleSwitch v-model="item.enabled" />
+            </view>
+          </view>
+          <text class="permission-note">请在系统设置中确保已授予应用通知权限</text>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+</template>
+
+<script lang="uts">
+import AppHeader from '../../components/AppHeader/AppHeader.uvue'
+import ToggleSwitch from '../../components/ToggleSwitch/ToggleSwitch.uvue'
+import { notifications } from '../../common/medora-data.uts'
+
+export default {
+  components: { AppHeader, ToggleSwitch },
+  data() {
+    return { items: notifications }
+  }
+}
+</script>
+
+<style scoped>
+.notification-content { padding-top: 16px; }
+.notice-copy { margin-bottom: 18px; }
+.notification-card { overflow: hidden; }
+.notification-row { min-height: 76px; padding: 16px; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #e8e8e8; display: flex; flex-direction: row; align-items: center; }
+.notification-copy { flex: 1; margin-left: 12px; display: flex; flex-direction: column; }
+.permission-note { margin-top: 32px; color: #717977; text-align: center; font-size: 12px; line-height: 18px; }
+</style>

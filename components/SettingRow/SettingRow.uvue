@@ -1,0 +1,71 @@
+<template>
+  <view class="setting-row" @tap="open">
+    <text class="icon-tile">{{ icon }}</text>
+    <view class="setting-copy">
+      <text class="row-title">{{ label }}</text>
+      <text v-if="desc.length > 0" class="row-desc setting-desc">{{ desc }}</text>
+    </view>
+    <text v-if="meta.length > 0" class="setting-meta">{{ meta }}</text>
+    <ToggleSwitch v-if="toggle" v-model="enabled" />
+    <text v-if="!toggle" class="setting-arrow">›</text>
+  </view>
+</template>
+
+<script lang="uts">
+import ToggleSwitch from '../ToggleSwitch/ToggleSwitch.uvue'
+
+export default {
+  components: { ToggleSwitch },
+  props: {
+    label: { type: String, default: '' },
+    desc: { type: String, default: '' },
+    icon: { type: String, default: '' },
+    path: { type: String, default: '' },
+    meta: { type: String, default: '' },
+    toggle: { type: Boolean, default: false },
+    badge: { type: String, default: '' }
+  },
+  data() {
+    return {
+      enabled: true
+    }
+  },
+  methods: {
+    open() {
+      if (this.path.length > 0) {
+        uni.navigateTo({ url: this.path })
+      }
+    }
+  }
+}
+</script>
+
+<style scoped>
+.setting-row {
+  min-height: 64px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.setting-copy {
+  flex: 1;
+  margin-left: 12px;
+  display: flex;
+  flex-direction: column;
+}
+.setting-desc {
+  margin-top: 2px;
+}
+.setting-meta {
+  color: #717977;
+  font-size: 12px;
+  line-height: 18px;
+  margin-right: 8px;
+}
+.setting-arrow {
+  color: #717977;
+  font-size: 26px;
+  line-height: 26px;
+}
+</style>

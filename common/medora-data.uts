@@ -1,0 +1,176 @@
+export const tabs = [
+  {
+    text: '首页',
+    key: 'home',
+    path: '/pages/home/index',
+    mark: '⌂',
+    icon: '/static/tabs/home.png',
+    activeIcon: '/static/tabs/home-active.png',
+    avatar: ''
+  },
+  {
+    text: '资料库',
+    key: 'library',
+    path: '/pages/library/index',
+    mark: '书',
+    icon: '/static/tabs/book.png',
+    activeIcon: '/static/tabs/book-active.png',
+    avatar: ''
+  },
+  {
+    text: '我的',
+    key: 'profile',
+    path: '/pages/profile/index',
+    mark: '人',
+    icon: '',
+    activeIcon: '',
+    avatar: '/static/tabs/avatar.png'
+  }
+]
+
+export const records = [
+  {
+    no: '病例 #1042',
+    title: '急性阑尾炎',
+    summary: '患者表现为右下腹痛、发热和恶心。麦氏点反跳痛阳性，等待超声确认。',
+    tags: ['外科', '急性']
+  },
+  {
+    no: '病例 #1041',
+    title: '社区获得性肺炎',
+    summary: '排痰性咳嗽、胸膜炎性胸痛和发热3天。胸部X线显示右下叶实变。',
+    tags: ['内科', '感染']
+  },
+  {
+    no: '今天',
+    title: '高血压急症',
+    summary: '血压显著升高伴头痛，需排查靶器官损害并记录降压方案。',
+    tags: ['心血管', '急诊']
+  }
+]
+
+export const knowledgeCards = [
+  {
+    title: '心房颤动',
+    dept: '内科',
+    summary: '常见心律失常。评估血栓风险、心室率控制及抗凝适应证。',
+    reviewed: '上次复习：2天前',
+    path: '/pages/knowledge-detail/index'
+  },
+  {
+    title: '急性阑尾炎',
+    dept: '外科',
+    summary: '右下腹痛、发热、恶心和局部腹膜刺激征。影像辅助确认。',
+    reviewed: '上次复习：1周前',
+    path: '/pages/knowledge-detail/index'
+  },
+  {
+    title: 'ACE抑制剂',
+    dept: '药理',
+    summary: '降压、心衰和肾保护常用药。注意咳嗽、高钾和肾功能变化。',
+    reviewed: '上次复习：3周前',
+    path: '/pages/knowledge-detail/index'
+  },
+  {
+    title: '法洛四联症',
+    dept: '儿科',
+    summary: '发绀型先天性心脏病，关注缺氧发作和外科矫治时机。',
+    reviewed: '上次复习：2周前',
+    path: '/pages/knowledge-detail/index'
+  }
+]
+
+export const heartFailure = {
+  title: '心力衰竭',
+  category: '慢性病',
+  intro: '心脏泵血能力不足导致组织灌注下降或静脉淤血。重点区分左心衰、右心衰和射血分数类型。',
+  tags: ['慢性病', '心血管', '高频考点'],
+  symptomGroups: [
+    {
+      title: '左心衰竭',
+      items: ['劳力性呼吸困难 (DOE)', '端坐呼吸', '阵发性夜间呼吸困难', '疲劳和无力']
+    },
+    {
+      title: '右心衰竭',
+      items: ['外周水肿（凹陷性）', '颈静脉怒张 (JVD)', '肝大（常伴触痛）', '腹水']
+    }
+  ],
+  diagnostics: [
+    {
+      title: '超声心动图 (TTE)',
+      body: '首选检查。评估LVEF、心腔大小。鉴别HFrEF（≤40%）和HFpEF（≥50%）。'
+    },
+    {
+      title: 'BNP/NT-proBNP',
+      body: '升高支持诊断，正常基本排除。需结合年龄、肾功能和肥胖状态解读。'
+    },
+    {
+      title: '心电图 (ECG)',
+      body: '极少正常。寻找心梗Q波、LVH或心律失常。'
+    },
+    {
+      title: '胸部X线',
+      body: '可见心脏扩大、肺静脉高压、间质性水肿或胸腔积液。'
+    }
+  ],
+  treatments: [
+    { name: 'ARNI/ACEi/ARB', desc: '首选沙库巴曲缬沙坦' },
+    { name: 'β受体阻滞剂', desc: '美托洛尔/比索洛尔等' },
+    { name: 'MRA', desc: '螺内酯，监测血钾' },
+    { name: 'SGLT2 抑制剂', desc: '达格列净/恩格列净' }
+  ],
+  symptomTreatment: {
+    title: '利尿剂（袢利尿剂）',
+    desc: '呋塞米/托拉塞米。缓解液体潴留和充血，依症状调量。'
+  }
+}
+
+export const calculators = [
+  { name: '身体质量指数 (BMI)', category: '身高、体重', active: true },
+  { name: '肾小球滤过率 (CrCl/eGFR)', category: '肾脏', active: false },
+  { name: 'Wells 评分 (DVT)', category: '血栓风险', active: false },
+  { name: '脓毒症筛查 (qSOFA)', category: '急诊', active: false }
+]
+
+export const settingsSections = [
+  {
+    title: '账号',
+    items: [
+      { label: '个人资料', icon: '人', path: '/pages/profile-edit/index', meta: '', toggle: false },
+      { label: '账号与安全', icon: '盾', path: '/pages/account-security/index', meta: '', toggle: false }
+    ]
+  },
+  {
+    title: '系统',
+    items: [
+      { label: '深色模式', icon: '夜', path: '', meta: '', toggle: true },
+      { label: '清理缓存', icon: '清', path: '', meta: '24 MB', toggle: false }
+    ]
+  },
+  {
+    title: '偏好',
+    items: [
+      { label: '消息通知', icon: '铃', path: '/pages/notifications/index', meta: '', toggle: false }
+    ]
+  },
+  {
+    title: '关于',
+    items: [
+      { label: '关于Medora', icon: 'i', path: '', meta: '1.0.0', toggle: false }
+    ]
+  }
+]
+
+export const accountItems = [
+  { title: '手机号', desc: '+86 138 **** 5678', icon: '机', badge: '', toggle: false },
+  { title: '电子邮箱', desc: '绑定邮箱用于账号找回', icon: '邮', badge: '未绑定', toggle: false },
+  { title: '修改密码', desc: '定期修改以保障账号安全', icon: '密', badge: '', toggle: false },
+  { title: '面容 ID / 触控 ID', desc: '使用系统生物识别快速登录', icon: '脸', badge: '', toggle: true }
+]
+
+export const notifications = [
+  { title: '推送通知', desc: '接收应用内的关键提醒', icon: '铃', enabled: true },
+  { title: '学习提醒', desc: '按照复习计划提醒你回顾知识卡片', icon: '学', enabled: true },
+  { title: '系统更新', desc: '新功能发布及维护通知', icon: '更', enabled: false },
+  { title: '声音与振动', desc: '允许通知时发出声音或振动', icon: '振', enabled: true }
+]

@@ -1,0 +1,44 @@
+<template>
+  <view class="app-page safe-top">
+    <view class="phone-frame">
+      <AppHeader title="设置" :back="true" />
+      <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
+        <view class="content settings-content">
+          <view v-for="section in sections" :key="section.title" class="settings-section">
+            <text class="section-title settings-title">{{ section.title }}</text>
+            <view class="settings-card card">
+              <view v-for="item in section.items" :key="item.label">
+                <SettingRow :label="item.label" :icon="item.icon" :path="item.path" :meta="item.meta" :toggle="item.toggle" />
+                <view class="divider"></view>
+              </view>
+            </view>
+          </view>
+          <text class="logout-button">退出登录</text>
+        </view>
+      </scroll-view>
+      <BottomTabs active="profile" />
+    </view>
+  </view>
+</template>
+
+<script lang="uts">
+import AppHeader from '../../components/AppHeader/AppHeader.uvue'
+import BottomTabs from '../../components/BottomTabs/BottomTabs.uvue'
+import SettingRow from '../../components/SettingRow/SettingRow.uvue'
+import { settingsSections } from '../../common/medora-data.uts'
+
+export default {
+  components: { AppHeader, BottomTabs, SettingRow },
+  data() {
+    return { sections: settingsSections }
+  }
+}
+</script>
+
+<style scoped>
+.settings-content { padding-top: 8px; }
+.settings-section { margin-bottom: 26px; }
+.settings-title { margin-left: 4px; margin-bottom: 8px; }
+.settings-card { overflow: hidden; }
+.logout-button { width: 128px; height: 48px; border-radius: 12px; background-color: #ffffff; color: #ba1a1a; line-height: 48px; text-align: center; font-size: 16px; font-weight: 700; }
+</style>

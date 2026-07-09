@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head></head><body>
+<meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&amp;family=Inter:wght@400&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet"/><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">try{
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed": "#111e1d",
+                        "inverse-surface": "#2f3131",
+                        "secondary-fixed-dim": "#bbc9c7",
+                        "secondary": "#53615f",
+                        "on-secondary-container": "#596765",
+                        "tertiary-fixed": "#ffdbce",
+                        "primary-container": "#537773",
+                        "surface": "#faf9f9",
+                        "on-secondary": "#ffffff",
+                        "surface-container-low": "#f4f3f3",
+                        "primary-fixed": "#c4eae5",
+                        "on-background": "#1a1c1c",
+                        "inverse-primary": "#a8cec9",
+                        "error": "#ba1a1a",
+                        "secondary-container": "#d7e6e3",
+                        "surface-container": "#eeeeed",
+                        "on-primary-fixed-variant": "#294d49",
+                        "on-tertiary-container": "#fff4f0",
+                        "on-error-container": "#93000a",
+                        "error-container": "#ffdad6",
+                        "tertiary": "#754f41",
+                        "outline-variant": "#c1c8c6",
+                        "secondary-fixed": "#d7e6e3",
+                        "tertiary-fixed-dim": "#eebbaa",
+                        "on-surface": "#1a1c1c",
+                        "on-secondary-fixed-variant": "#3c4948",
+                        "primary-fixed-dim": "#a8cec9",
+                        "inverse-on-surface": "#f1f1f0",
+                        "tertiary-container": "#906758",
+                        "on-primary-container": "#d7fef9",
+                        "surface-container-lowest": "#ffffff",
+                        "primary": "#3b5e5b",
+                        "surface-dim": "#dadada",
+                        "on-primary-fixed": "#00201e",
+                        "surface-container-highest": "#e3e2e2",
+                        "on-tertiary": "#ffffff",
+                        "surface-tint": "#416561",
+                        "surface-variant": "#e3e2e2",
+                        "surface-bright": "#faf9f9",
+                        "outline": "#717977",
+                        "on-tertiary-fixed": "#2f1409",
+                        "background": "#faf9f9",
+                        "on-surface-variant": "#414847",
+                        "surface-container-high": "#e8e8e8",
+                        "on-tertiary-fixed-variant": "#613e31",
+                        "on-primary": "#ffffff",
+                        "on-error": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-margin": "24px",
+                        "section-gap": "48px",
+                        "stack-lg": "32px",
+                        "gutter": "16px",
+                        "stack-md": "16px",
+                        "stack-sm": "8px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Manrope"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-caps": ["JetBrains Mono"],
+                        "display-lg-mobile": ["Manrope"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "display-lg-mobile": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    }catch(_e){}</script>
+<div class="bg-background min-h-[884px] text-on-surface flex flex-col relative w-full overflow-hidden">
+<!-- Header -->
+<header class="pt-[54px] pb-4 px-container-margin sticky top-0 bg-background/90 backdrop-blur-md z-40 border-b border-outline-variant/20 flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<h1 class="font-headline-md text-headline-md tracking-tight">Medora</h1>
+<button class="w-10 h-10 rounded-full flex items-center justify-center bg-surface-container-high hover:bg-surface-variant transition-colors" data-purpose="search-button">
+<span class="material-symbols-outlined text-[24px]">search</span>
+</button>
+</div>
+<!-- Category Chips -->
+<div class="flex gap-3 overflow-x-auto pb-2 snap-x hide-scrollbar -mx-container-margin px-container-margin">
+<button class="snap-start flex-shrink-0 px-4 py-2 rounded-full bg-primary text-on-primary font-body-sm transition-colors border border-transparent whitespace-nowrap">全部</button>
+<button class="snap-start flex-shrink-0 px-4 py-2 rounded-full bg-surface-container border border-outline-variant/30 text-on-surface-variant hover:bg-surface-variant font-body-sm transition-colors whitespace-nowrap">内科</button>
+<button class="snap-start flex-shrink-0 px-4 py-2 rounded-full bg-surface-container border border-outline-variant/30 text-on-surface-variant hover:bg-surface-variant font-body-sm transition-colors whitespace-nowrap">外科</button>
+<button class="snap-start flex-shrink-0 px-4 py-2 rounded-full bg-surface-container border border-outline-variant/30 text-on-surface-variant hover:bg-surface-variant font-body-sm transition-colors whitespace-nowrap">药理学</button>
+</div>
+</header>
+<!-- Main Content (Cards) -->
+<main class="flex-grow overflow-y-auto px-container-margin py-stack-md flex flex-col gap-4 pb-32">
+<!-- Card 1 -->
+<article class="bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-4 shadow-sm flex flex-col gap-3 relative overflow-hidden group cursor-pointer hover:border-outline-variant transition-colors" data-purpose="disease-card">
+<div class="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+<div class="flex justify-between items-start z-10">
+<div>
+<h2 class="font-headline-md text-[20px] text-on-surface mb-1">心房颤动</h2>
+</div>
+<div class="bg-primary/10 text-primary px-2 py-1 rounded-md font-label-caps text-label-caps whitespace-nowrap">内科</div>
+</div>
+<p class="font-body-sm text-on-surface-variant line-clamp-2 mt-2">
+                    最常见的心律失常，特征为心房活动不协调导致心室反应不规则。
+                </p>
+<div class="flex items-center justify-between mt-2 pt-3 border-t border-outline-variant/20">
+<div class="flex items-center gap-1 text-on-surface-variant opacity-70">
+<span class="material-symbols-outlined text-[16px]">update</span>
+<span class="font-body-sm text-[12px]">上次复习: 2天前</span>
+</div>
+<div class="flex items-center gap-1 text-primary">
+<span class="font-body-sm font-medium">查看详情</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</div>
+</div>
+</article>
+<!-- Card 2 -->
+<article class="bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-4 shadow-sm flex flex-col gap-3 relative overflow-hidden group cursor-pointer hover:border-outline-variant transition-colors" data-purpose="disease-card">
+<div class="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+<div class="flex justify-between items-start z-10">
+<div>
+<h2 class="font-headline-md text-[20px] text-on-surface mb-1">急性阑尾炎</h2>
+</div>
+<div class="bg-primary/10 text-primary px-2 py-1 rounded-md font-label-caps text-label-caps whitespace-nowrap">外科</div>
+</div>
+<p class="font-body-sm text-on-surface-variant line-clamp-2 mt-2">
+                    阑尾发炎，通常表现为右下腹痛、恶心、呕吐和发热。需紧急处理。
+                </p>
+<div class="flex items-center justify-between mt-2 pt-3 border-t border-outline-variant/20">
+<div class="flex items-center gap-1 text-on-surface-variant opacity-70">
+<span class="material-symbols-outlined text-[16px]">update</span>
+<span class="font-body-sm text-[12px]">上次复习: 1周前</span>
+</div>
+<div class="flex items-center gap-1 text-primary">
+<span class="font-body-sm font-medium">查看详情</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</div>
+</div>
+</article>
+<!-- Card 3 -->
+<article class="bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-4 shadow-sm flex flex-col gap-3 relative overflow-hidden group cursor-pointer hover:border-outline-variant transition-colors" data-purpose="disease-card">
+<div class="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+<div class="flex justify-between items-start z-10">
+<div>
+<h2 class="font-headline-md text-[20px] text-on-surface mb-1">ACE抑制剂</h2>
+</div>
+<div class="bg-primary/10 text-primary px-2 py-1 rounded-md font-label-caps text-label-caps whitespace-nowrap">药理学</div>
+</div>
+<p class="font-body-sm text-on-surface-variant line-clamp-2 mt-2">
+                    主要用于治疗高血压和心力衰竭。常见副作用包括干咳和高钾血症。
+                </p>
+<div class="flex items-center justify-between mt-2 pt-3 border-t border-outline-variant/20">
+<div class="flex items-center gap-1 text-on-surface-variant opacity-70">
+<span class="material-symbols-outlined text-[16px]">update</span>
+<span class="font-body-sm text-[12px]">上次复习: 3天前</span>
+</div>
+<div class="flex items-center gap-1 text-primary">
+<span class="font-body-sm font-medium">查看详情</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</div>
+</div>
+</article>
+<!-- Card 4 -->
+<article class="bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-4 shadow-sm flex flex-col gap-3 relative overflow-hidden group cursor-pointer hover:border-outline-variant transition-colors" data-purpose="disease-card">
+<div class="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+<div class="flex justify-between items-start z-10">
+<div>
+<h2 class="font-headline-md text-[20px] text-on-surface mb-1">法洛四联症</h2>
+</div>
+<div class="bg-primary/10 text-primary px-2 py-1 rounded-md font-label-caps text-label-caps whitespace-nowrap">儿科</div>
+</div>
+<p class="font-body-sm text-on-surface-variant line-clamp-2 mt-2">
+                    最常见的发绀型先天性心脏病。包含室间隔缺损、肺动脉狭窄等四个病变。
+                </p>
+<div class="flex items-center justify-between mt-2 pt-3 border-t border-outline-variant/20">
+<div class="flex items-center gap-1 text-on-surface-variant opacity-70">
+<span class="material-symbols-outlined text-[16px]">update</span>
+<span class="font-body-sm text-[12px]">上次复习: 2周前</span>
+</div>
+<div class="flex items-center gap-1 text-primary">
+<span class="font-body-sm font-medium">查看详情</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</div>
+</div>
+</article>
+</main>
+<!-- Bottom Navigation (Aligned with Home Screen style) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 border-t border-transparent bg-surface dark:bg-inverse-surface shadow-[0_-2px_10px_rgba(0,0,0,0.05)] md:hidden">
+<!-- Inactive: Home -->
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant opacity-60 hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors active:scale-90 p-2 rounded-lg cursor-pointer">
+<span class="material-symbols-outlined mb-1" data-icon="home">home</span>
+<span class="font-label-caps text-[10px]">首页</span>
+</div>
+<!-- Active: Knowledge Base -->
+<div class="flex flex-col items-center justify-center text-primary dark:text-primary-fixed-dim font-bold hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors active:scale-90 p-2 rounded-lg cursor-pointer">
+<span class="material-symbols-outlined mb-1" data-icon="menu_book">menu_book</span>
+<span class="font-label-caps text-[10px]">知识库</span>
+</div>
+<!-- Inactive: Profile -->
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant opacity-60 hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors active:scale-90 p-2 rounded-lg cursor-pointer">
+<span class="material-symbols-outlined mb-1" data-icon="person">person</span>
+<span class="font-label-caps text-[10px]">我的</span>
+</div>
+</nav>
+</div>
+<style>
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</body></html>

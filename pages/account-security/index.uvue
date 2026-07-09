@@ -1,0 +1,40 @@
+<template>
+  <view class="app-page safe-top">
+    <view class="phone-frame">
+      <AppHeader title="设置" :back="true" />
+      <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
+        <view class="content account-content">
+          <text class="screen-title">账号与安全</text>
+          <text class="body-text account-copy">管理您的登录方式并保护您的健康数据。</text>
+          <view class="account-list">
+            <view v-for="item in accountItems" :key="item.title" class="account-row card">
+              <SettingRow :label="item.title" :desc="item.desc" :icon="item.icon" :badge="item.badge" :toggle="item.toggle" />
+            </view>
+          </view>
+          <text class="delete-account">注销账号</text>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+</template>
+
+<script lang="uts">
+import AppHeader from '../../components/AppHeader/AppHeader.uvue'
+import SettingRow from '../../components/SettingRow/SettingRow.uvue'
+import { accountItems } from '../../common/medora-data.uts'
+
+export default {
+  components: { AppHeader, SettingRow },
+  data() {
+    return { accountItems: accountItems }
+  }
+}
+</script>
+
+<style scoped>
+.account-content { padding-top: 8px; }
+.account-copy { margin-top: 8px; }
+.account-list { margin-top: 28px; }
+.account-row { margin-bottom: 14px; overflow: hidden; }
+.delete-account { margin-top: 24px; color: #ba1a1a; text-align: center; font-size: 16px; line-height: 24px; font-weight: 700; }
+</style>

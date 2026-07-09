@@ -1,0 +1,18 @@
+# UniApp X build outputs
+/unpackage/dist/
+/unpackage/cache/
+/unpackage/res/
+
+# IDE
+/.idea/
+/.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Dependencies
+/node_modules/

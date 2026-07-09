@@ -1,0 +1,78 @@
+<template>
+  <view class="app-page safe-top">
+    <view class="phone-frame">
+      <AppHeader title="Medora" :brand="true" :compact="true" actionIcon="/static/icons/search.png" />
+      <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
+        <view class="content home-main">
+          <view class="quick-row">
+            <view class="quick-card quick-record-card" @tap="go('/pages/record/index')">
+              <view class="quick-symbol-box">
+                <text class="quick-plus">+</text>
+              </view>
+              <text class="quick-title quick-title-light">开始记录</text>
+            </view>
+            <view class="quick-card quick-calculator-card card" @tap="go('/pages/calculator/index')">
+              <image class="quick-calc-icon" src="/static/icons/calculator.png" mode="aspectFit"></image>
+              <text class="quick-title">计算器</text>
+            </view>
+          </view>
+          <view class="section-head">
+            <text class="screen-title">最近记录</text>
+            <text class="link-text" @tap="go('/pages/library/index')">查看全部</text>
+          </view>
+          <view class="record-list">
+            <view v-for="record in records" :key="record.no" class="record-card card">
+              <text class="record-no">{{ record.no }}</text>
+              <text class="record-title">{{ record.title }}</text>
+              <text class="record-summary">{{ record.summary }}</text>
+              <view class="tag-row">
+                <text v-for="tag in record.tags" :key="tag" class="pill tag-space">{{ tag }}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+      <BottomTabs active="home" />
+    </view>
+  </view>
+</template>
+
+<script lang="uts">
+import AppHeader from '../../components/AppHeader/AppHeader.uvue'
+import BottomTabs from '../../components/BottomTabs/BottomTabs.uvue'
+import { records } from '../../common/medora-data.uts'
+
+export default {
+  components: { AppHeader, BottomTabs },
+  data() {
+    return { records: records }
+  },
+  methods: {
+    go(url) {
+      uni.navigateTo({ url: url })
+    }
+  }
+}
+</script>
+
+<style scoped>
+.home-main { padding-top: 24px; }
+.quick-row { display: flex; flex-direction: row; justify-content: space-between; }
+.quick-card { width: 164px; height: 128px; padding: 16px; }
+.quick-record-card { background-color: #314f49; border-radius: 16px; }
+.quick-calculator-card { background-color: #ffffff; border-radius: 16px; }
+.quick-symbol-box { width: 52px; height: 52px; border-radius: 12px; background-color: #647a75; display: flex; flex-direction: row; align-items: center; justify-content: center; }
+.quick-plus { width: 28px; height: 28px; border-radius: 14px; border-width: 3px; border-style: solid; border-color: #ffffff; color: #ffffff; text-align: center; line-height: 25px; font-size: 24px; font-weight: 700; }
+.quick-calc-icon { width: 30px; height: 30px; margin-top: 8px; margin-left: 8px; }
+.quick-title { margin-top: 18px; color: #1a1c1c; font-size: 17px; line-height: 24px; font-weight: 700; }
+.quick-title-light { color: #ffffff; }
+.section-head { margin-top: 32px; display: flex; flex-direction: row; align-items: flex-end; justify-content: space-between; }
+.link-text { color: #3b5e5b; font-size: 12px; line-height: 18px; font-weight: 700; }
+.record-list { margin-top: 16px; }
+.record-card { min-height: 156px; margin-bottom: 14px; padding: 18px; }
+.record-no { color: #717977; font-size: 12px; line-height: 16px; }
+.record-title { margin-top: 6px; color: #1a1c1c; font-size: 22px; line-height: 30px; font-weight: 700; }
+.record-summary { margin-top: 8px; color: #414847; font-size: 14px; line-height: 22px; }
+.tag-row { margin-top: 14px; display: flex; flex-direction: row; }
+.tag-space { margin-right: 6px; }
+</style>

@@ -1,0 +1,64 @@
+<template>
+  <view class="app-page safe-top">
+    <view class="phone-frame">
+      <AppHeader title="Medora" :brand="true" :compact="true" actionIcon="/static/icons/search.png" />
+      <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
+        <view class="content library-main">
+          <view class="tabs-row">
+            <text v-for="tab in categoryTabs" :key="tab" :class="activeCategory == tab ? 'ghost-button ghost-button-active cat-tab' : 'ghost-button cat-tab'" @tap="activeCategory = tab">{{ tab }}</text>
+          </view>
+          <view class="article-list">
+            <view v-for="card in cards" :key="card.title" class="article-card card" @tap="go(card.path)">
+              <view class="article-head">
+                <text class="article-title">{{ card.title }}</text>
+                <text class="pill">{{ card.dept }}</text>
+              </view>
+              <text class="article-summary">{{ card.summary }}</text>
+              <view class="article-footer">
+                <text class="reviewed">{{ card.reviewed }}</text>
+                <text class="detail-link">查看详情 ></text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+      <BottomTabs active="library" />
+    </view>
+  </view>
+</template>
+
+<script lang="uts">
+import AppHeader from '../../components/AppHeader/AppHeader.uvue'
+import BottomTabs from '../../components/BottomTabs/BottomTabs.uvue'
+import { knowledgeCards } from '../../common/medora-data.uts'
+
+export default {
+  components: { AppHeader, BottomTabs },
+  data() {
+    return {
+      cards: knowledgeCards,
+      categoryTabs: ['全部', '内科', '外科', '药理'],
+      activeCategory: '全部'
+    }
+  },
+  methods: {
+    go(url) {
+      uni.navigateTo({ url: url })
+    }
+  }
+}
+</script>
+
+<style scoped>
+.library-main { padding-top: 12px; }
+.tabs-row { display: flex; flex-direction: row; }
+.cat-tab { margin-right: 8px; }
+.article-list { margin-top: 24px; }
+.article-card { min-height: 160px; margin-bottom: 16px; padding: 18px; }
+.article-head { display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.article-title { color: #1a1c1c; font-size: 20px; line-height: 28px; font-weight: 700; }
+.article-summary { margin-top: 12px; color: #414847; font-size: 14px; line-height: 22px; }
+.article-footer { margin-top: 18px; padding-top: 14px; border-top-width: 1px; border-top-style: solid; border-top-color: #e8e8e8; display: flex; flex-direction: row; justify-content: space-between; }
+.reviewed { color: #717977; font-size: 12px; line-height: 18px; }
+.detail-link { color: #3b5e5b; font-size: 14px; line-height: 18px; font-weight: 700; }
+</style>
