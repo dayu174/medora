@@ -82,9 +82,10 @@ export const knowledgeCards = [
 
 export const heartFailure = {
   title: '心力衰竭',
+  dept: '心内科',
   category: '慢性病',
-  intro: '心脏泵血能力不足导致组织灌注下降或静脉淤血。重点区分左心衰、右心衰和射血分数类型。',
-  tags: ['慢性病', '心血管', '高频考点'],
+  intro: '一种复杂的临床综合征，由任何导致心室充盈或射血功能受损的结构或功能异常引起。它代表了许多心脏疾病的终末阶段。',
+  tags: ['心内科', '慢性病'],
   symptomGroups: [
     {
       title: '左心衰竭',
@@ -101,27 +102,30 @@ export const heartFailure = {
       body: '首选检查。评估LVEF、心腔大小。鉴别HFrEF（≤40%）和HFpEF（≥50%）。'
     },
     {
-      title: 'BNP/NT-proBNP',
-      body: '升高支持诊断，正常基本排除。需结合年龄、肾功能和肥胖状态解读。'
+      title: '生物标志物',
+      body: 'BNP/NT-proBNP：升高支持诊断，正常基本排除。'
     },
     {
       title: '心电图 (ECG)',
-      body: '极少正常。寻找心梗Q波、LVH或心律失常。'
+      body: '极少正常。寻找心梗(Q波)、LVH或心律失常(房颤/LBBB)。'
     },
     {
       title: '胸部X线',
-      body: '可见心脏扩大、肺静脉高压、间质性水肿或胸腔积液。'
+      body: '心脏扩大、肺静脉高压、间质性水肿(Kerley B线)、肺泡性水肿和胸腔积液。'
     }
   ],
-  treatments: [
-    { name: 'ARNI/ACEi/ARB', desc: '首选沙库巴曲缬沙坦' },
-    { name: 'β受体阻滞剂', desc: '美托洛尔/比索洛尔等' },
-    { name: 'MRA', desc: '螺内酯，监测血钾' },
-    { name: 'SGLT2 抑制剂', desc: '达格列净/恩格列净' }
-  ],
-  symptomTreatment: {
-    title: '利尿剂（袢利尿剂）',
-    desc: '呋塞米/托拉塞米。缓解液体潴留和充血，依症状调量。'
+  treatments: {
+    subtitle: 'HFREF 核心药物 (GDMT)',
+    coreDrugs: [
+      { name: 'ARNI/ACEi/ARB', desc: '首选沙库巴曲缬沙坦' },
+      { name: 'β受体阻滞剂', desc: '美托洛尔/比索洛尔等' },
+      { name: 'MRA', desc: '螺内酯，监测血钾' },
+      { name: 'SGLT2 抑制剂', desc: '达格列净/恩格列净' }
+    ],
+    symptomManagement: {
+      title: '利尿剂（袢利尿剂）',
+      desc: '呋塞米/托拉塞米。缓解液体潴留和充血，依症状调量。'
+    }
   }
 }
 

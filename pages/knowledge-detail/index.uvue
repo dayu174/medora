@@ -1,44 +1,110 @@
 <template>
   <view class="app-page safe-top">
     <view class="phone-frame">
-      <AppHeader :title="data.title" :back="true" action="藏" />
+      <!-- Header -->
+      <view class="detail-header">
+        <view class="back-hit" @tap="goBack">
+          <text class="back-icon">‹</text>
+        </view>
+        <text class="detail-title">{{ data.title }}</text>
+        <view class="bookmark-hit" @tap="toggleBookmark">
+          <text class="bookmark-icon">{{ isBookmarked ? '★' : '☆' }}</text>
+        </view>
+      </view>
+
+      <!-- Main Canvas -->
       <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
-        <view class="content detail-content">
-          <view class="detail-intro card">
-            <text class="detail-title">{{ data.title }}</text>
+        <view class="content">
+          <!-- Summary/Hero Section -->
+          <view class="hero-section">
             <view class="tag-row">
-              <text v-for="tag in data.tags" :key="tag" class="pill tag-space">{{ tag }}</text>
+              <text class="tag tag-primary">{{ data.tags[0] }}</text>
+              <text class="tag tag-secondary" style="margin-left: 8px;">{{ data.tags[1] }}</text>
             </view>
-            <text class="body-text intro-copy">{{ data.intro }}</text>
+            <text class="hero-desc">{{ data.intro }}</text>
           </view>
-          <SectionBlock title="症状">
-            <view class="symptom-card card">
+
+          <!-- Knowledge Card: Symptoms (症状) -->
+          <view class="k-card">
+            <view class="k-card-header">
+              <text class="k-card-icon">●</text>
+              <text class="k-card-heading">症状</text>
+            </view>
+            <view class="symptom-grid">
               <view v-for="group in data.symptomGroups" :key="group.title" class="symptom-col">
-                <text class="group-title">{{ group.title }}</text>
-                <view v-for="item in group.items" :key="item" class="check-row">
-                  <text class="check-mark">√</text>
-                  <text class="check-copy">{{ item }}</text>
+                <text class="symptom-group-title">{{ group.title }}</text>
+                <view v-for="item in group.items" :key="item" class="symptom-row">
+                  <text class="check-icon">✓</text>
+                  <text class="symptom-text">{{ item }}</text>
                 </view>
               </view>
             </view>
-          </SectionBlock>
-          <SectionBlock title="诊断要点">
-            <view v-for="item in data.diagnostics" :key="item.title" class="diagnostic-main soft-card">
-              <text class="group-title">{{ item.title }}</text>
-              <text class="body-text">{{ item.body }}</text>
+          </view>
+
+          <!-- Knowledge Card: Diagnosis (诊断要点) -->
+          <view class="k-card">
+            <view class="k-card-header">
+              <text class="k-card-icon">●</text>
+              <text class="k-card-heading">诊断要点</text>
             </view>
-          </SectionBlock>
-          <SectionBlock title="治疗方案">
-            <view class="treatment-grid">
-              <view v-for="(item, index) in data.treatments" :key="item.name" class="treatment-item soft-card">
-                <text class="treatment-index">{{ index + 1 }}</text>
-                <view class="treatment-copy">
-                  <text class="group-title">{{ item.name }}</text>
-                  <text class="row-desc">{{ item.desc }}</text>
+            <view class="diag-grid">
+              <!-- TTE highlight -->
+              <view class="diag-highlight">
+                <text class="diag-hl-icon">♥</text>
+                <view class="diag-hl-body">
+                  <text class="diag-hl-title">{{ data.diagnostics[0].title }}</text>
+                  <text class="diag-hl-desc">{{ data.diagnostics[0].body }}</text>
+                </view>
+              </view>
+              <!-- 生物标志物 + ECG 并排 -->
+              <view class="diag-row">
+                <view class="diag-small">
+                  <text class="diag-small-label">{{ data.diagnostics[1].title }}</text>
+                  <text class="diag-small-body">{{ data.diagnostics[1].body }}</text>
+                </view>
+                <view class="diag-small" style="margin-left: 8px;">
+                  <text class="diag-small-label">{{ data.diagnostics[2].title }}</text>
+                  <text class="diag-small-body">{{ data.diagnostics[2].body }}</text>
+                </view>
+              </view>
+              <!-- 胸部X线 -->
+              <view class="diag-full">
+                <text class="diag-small-label">{{ data.diagnostics[3].title }}</text>
+                <text class="diag-small-body">{{ data.diagnostics[3].body }}</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- Knowledge Card: Treatment (治疗方案) -->
+          <view class="k-card">
+            <view class="k-card-header">
+              <text class="k-card-icon">●</text>
+              <text class="k-card-heading">治疗方案</text>
+            </view>
+            <text class="treatment-sub-label">{{ data.treatments.subtitle }}</text>
+            <view class="drug-grid">
+              <view v-for="(item, index) in data.treatments.coreDrugs" :key="item.name" class="drug-item">
+                <view class="drug-num-circle">
+                  <text class="drug-num-text">{{ index + 1 }}</text>
+                </view>
+                <view class="drug-info">
+                  <text class="drug-name">{{ item.name }}</text>
+                  <text class="drug-desc">{{ item.desc }}</text>
                 </view>
               </view>
             </view>
-          </SectionBlock>
+            <text class="treatment-sub-label" style="margin-top: 8px;">症状管理</text>
+            <view class="symptom-mgmt">
+              <text class="symptom-mgmt-icon">💧</text>
+              <view class="symptom-mgmt-body">
+                <text class="symptom-mgmt-title">{{ data.treatments.symptomManagement.title }}</text>
+                <text class="symptom-mgmt-desc">{{ data.treatments.symptomManagement.desc }}</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- Spacer -->
+          <view style="height: 24px;"></view>
         </view>
       </scroll-view>
     </view>
@@ -46,34 +112,341 @@
 </template>
 
 <script lang="uts">
-import AppHeader from '../../components/AppHeader/AppHeader.uvue'
-import SectionBlock from '../../components/SectionBlock/SectionBlock.uvue'
 import { heartFailure } from '../../common/medora-data.uts'
 
 export default {
-  components: { AppHeader, SectionBlock },
   data() {
-    return { data: heartFailure }
+    return {
+      data: heartFailure,
+      isBookmarked: false
+    }
+  },
+  methods: {
+    goBack() {
+      uni.navigateTo({ url: '/pages/library/index' })
+    },
+    toggleBookmark() {
+      this.isBookmarked = !this.isBookmarked
+    }
   }
 }
 </script>
 
 <style scoped>
-.detail-content { padding-top: 80px; }
-.detail-intro { margin-bottom: 24px; padding: 20px; }
-.detail-title { color: #3b5e5b; font-size: 26px; line-height: 34px; font-weight: 700; }
-.tag-row { margin-top: 12px; display: flex; flex-direction: row; }
-.tag-space { margin-right: 6px; }
-.intro-copy { margin-top: 14px; }
-.symptom-card { padding: 18px; display: flex; flex-direction: row; justify-content: space-between; }
-.symptom-col { width: 150px; display: flex; flex-direction: column; }
-.group-title { color: #1a1c1c; font-size: 14px; line-height: 20px; font-weight: 700; }
-.check-row { margin-top: 8px; display: flex; flex-direction: row; align-items: center; }
-.check-mark { width: 18px; height: 18px; margin-right: 8px; border-radius: 9px; border-width: 1px; border-style: solid; border-color: #8ba5a1; color: #3b5e5b; text-align: center; line-height: 18px; font-size: 12px; }
-.check-copy { flex: 1; color: #1a1c1c; font-size: 13px; line-height: 18px; }
-.diagnostic-main { padding: 16px; margin-bottom: 12px; display: flex; flex-direction: column; }
-.treatment-grid { display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between; }
-.treatment-item { width: 154px; min-height: 70px; margin-bottom: 12px; padding: 12px; display: flex; flex-direction: row; }
-.treatment-index { width: 24px; height: 24px; margin-right: 10px; border-radius: 12px; background-color: #d7e6e3; color: #3b5e5b; line-height: 24px; text-align: center; font-size: 12px; font-weight: 700; }
-.treatment-copy { flex: 1; }
+/* ===== Header ===== */
+.detail-header {
+  height: 64px;
+  padding: 8px 16px;
+  background-color: rgba(250, 249, 246, 0.92);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+.back-hit {
+  width: 36px;
+  height: 44px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+}
+.back-icon {
+  color: #434842;
+  font-size: 20px;
+  line-height: 24px;
+}
+.detail-title {
+  color: #47614a;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 700;
+  flex: 1;
+  text-align: center;
+}
+.bookmark-hit {
+  width: 36px;
+  height: 44px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+}
+.bookmark-icon {
+  color: #434842;
+  font-size: 20px;
+  line-height: 24px;
+}
+
+/* ===== Content area ===== */
+.content {
+  padding: 12px 16px;
+}
+.hero-section {
+  margin-bottom: 12px;
+}
+.hero-desc {
+  margin-top: 8px;
+  color: #434842;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+/* ===== Tags ===== */
+.tag-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+.tag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  line-height: 16px;
+  font-weight: 500;
+}
+.tag-primary {
+  background-color: rgba(71, 97, 74, 0.1);
+  color: #47614a;
+}
+.tag-secondary {
+  background-color: #e2e3df;
+  color: #434842;
+}
+
+/* ===== Knowledge Card ===== */
+.k-card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: rgba(195, 200, 191, 0.3);
+  padding: 12px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+}
+.k-card-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-bottom-color: rgba(226, 227, 223, 0.5);
+}
+.k-card-icon {
+  color: #47614a;
+  font-size: 18px;
+  line-height: 24px;
+  margin-right: 8px;
+}
+.k-card-heading {
+  color: #47614a;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 700;
+}
+
+/* ===== Symptoms ===== */
+.symptom-grid {
+  display: flex;
+  flex-direction: row;
+}
+.symptom-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.symptom-col:first-child {
+  margin-right: 12px;
+}
+.symptom-group-title {
+  color: #59605c;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+}
+.symptom-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  margin-top: 4px;
+}
+.check-icon {
+  color: rgba(71, 97, 74, 0.7);
+  font-size: 14px;
+  line-height: 16px;
+  margin-right: 6px;
+}
+.symptom-text {
+  flex: 1;
+  color: #1a1c1a;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+/* ===== Diagnosis ===== */
+.diag-grid {
+  display: flex;
+  flex-direction: column;
+}
+.diag-highlight {
+  background-color: rgba(71, 97, 74, 0.05);
+  border-radius: 4px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: rgba(71, 97, 74, 0.2);
+  padding: 8px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+.diag-hl-icon {
+  color: #47614a;
+  font-size: 16px;
+  line-height: 20px;
+  margin-right: 8px;
+}
+.diag-hl-body {
+  flex: 1;
+}
+.diag-hl-title {
+  color: #1a1c1a;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 600;
+}
+.diag-hl-desc {
+  margin-top: 2px;
+  color: #434842;
+  font-size: 11px;
+  line-height: 16px;
+}
+.diag-row {
+  display: flex;
+  flex-direction: row;
+  margin-bottom: 8px;
+}
+.diag-small {
+  flex: 1;
+  padding: 8px;
+  background-color: #f4f4f0;
+  border-radius: 4px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: rgba(226, 227, 223, 0.5);
+}
+.diag-small-label {
+  color: #59605c;
+  font-size: 10px;
+  line-height: 14px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.diag-small-body {
+  color: #1a1c1a;
+  font-size: 11px;
+  line-height: 16px;
+}
+.diag-full {
+  padding: 8px;
+  background-color: #f4f4f0;
+  border-radius: 4px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: rgba(226, 227, 223, 0.5);
+}
+
+/* ===== Treatment ===== */
+.treatment-sub-label {
+  color: #59605c;
+  font-size: 10px;
+  line-height: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.drug-grid {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.drug-item {
+  width: 48%;
+  padding: 6px;
+  background-color: #f4f4f0;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+.drug-num-circle {
+  width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  background-color: rgba(71, 97, 74, 0.2);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+}
+.drug-num-text {
+  color: #47614a;
+  font-size: 10px;
+  line-height: 14px;
+  font-weight: 700;
+}
+.drug-info {
+  flex: 1;
+}
+.drug-name {
+  color: #1a1c1a;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+}
+.drug-desc {
+  margin-top: 2px;
+  color: #434842;
+  font-size: 10px;
+  line-height: 14px;
+}
+
+/* ===== Symptom management ===== */
+.symptom-mgmt {
+  background-color: rgba(71, 97, 74, 0.05);
+  border-radius: 4px;
+  padding: 8px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: rgba(71, 97, 74, 0.1);
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+.symptom-mgmt-icon {
+  font-size: 16px;
+  line-height: 20px;
+  margin-right: 8px;
+}
+.symptom-mgmt-body {
+  flex: 1;
+}
+.symptom-mgmt-title {
+  color: #1a1c1a;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+}
+.symptom-mgmt-desc {
+  margin-top: 2px;
+  color: #434842;
+  font-size: 10px;
+  line-height: 14px;
+}
 </style>

@@ -1,54 +1,84 @@
 <template>
   <view class="app-page safe-top">
     <view class="phone-frame">
-      <AppHeader title="Medora" :brand="true" :compact="true" actionIcon="/static/icons/search.png" />
+      <!-- Header: bg-surface(#f9f9f8), px-24px, py-16px, flex, between, center -->
+      <view class="home-header">
+        <text class="brand">Medora</text>
+        <view class="search-hit" @tap="go('/pages/library/index')">
+          <text class="search-icon">⌕</text>
+        </view>
+      </view>
+
+      <!-- scroll-view 占满剩余空间 -->
       <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
-        <view class="content home-main">
-          <view class="quick-row">
-            <view class="quick-card quick-record-card" @tap="go('/pages/record/index')">
-              <view class="quick-symbol-box">
-                <text class="quick-plus">+</text>
+        <!-- main: px-4(16px), pt-4(16px), flex-col -->
+        <view class="home-main">
+          <!-- Quick Actions: 2 col grid, gap-16px -->
+          <view class="quick-grid">
+            <!-- 开始记录: bg-primary(#334b46), rounded-xl(12px), p-16px, flex-col, items-start -->
+            <view class="quick-btn quick-record" @tap="go('/pages/record/index')">
+              <view class="quick-icon-box quick-icon-box-record">
+                <text class="quick-icon quick-icon-record">+</text>
               </view>
-              <text class="quick-title quick-title-light">开始记录</text>
+              <text class="quick-label quick-label-record">开始记录</text>
             </view>
-            <view class="quick-card quick-calculator-card card" @tap="go('/pages/calculator/index')">
-              <image class="quick-calc-icon" src="/static/icons/calculator.png" mode="aspectFit"></image>
-              <text class="quick-title">计算器</text>
+            <!-- 计算器: bg-surface-container-low(#f3f4f3), rounded-xl(12px), p-16px, border outline-variant/30 -->
+            <view class="quick-btn quick-calc" @tap="go('/pages/calculator/index')">
+              <view class="quick-icon-box">
+                <text class="quick-icon quick-icon-calc">⊞</text>
+              </view>
+              <text class="quick-label quick-label-calc">计算器</text>
             </view>
           </view>
-          <view class="section-head">
-            <text class="screen-title">最近记录</text>
-            <text class="link-text" @tap="go('/pages/library/index')">查看全部</text>
-          </view>
-          <view class="record-list">
-            <view v-for="record in records" :key="record.no" class="record-card card">
-              <text class="record-no">{{ record.no }}</text>
-              <text class="record-title">{{ record.title }}</text>
-              <text class="record-summary">{{ record.summary }}</text>
-              <view class="tag-row">
-                <text v-for="tag in record.tags" :key="tag" class="pill tag-space">{{ tag }}</text>
+
+          <!-- Recent Records: flex-col -->
+          <view class="recent-section">
+            <!-- Header row: flex, between, items-end -->
+            <view class="recent-head">
+              <text class="recent-title">最近记录</text>
+              <text class="recent-link" @tap="go('/pages/library/index')">查看全部</text>
+            </view>
+            <!-- Record list -->
+            <view class="record-list">
+              <view v-for="(record, index) in records" :key="record.no" class="record-card" :style="record.draft ? 'opacity: 0.75;' : ''">
+                <!-- Top row: flex, between, items-start -->
+                <view class="record-top">
+                  <view class="record-top-left">
+                    <text class="record-no">{{ record.no }}</text>
+                    <text class="record-name" :style="record.draft ? 'font-style: italic;' : ''">{{ record.title }}</text>
+                  </view>
+                  <text class="record-more">⋯</text>
+                </view>
+                <!-- Description -->
+                <text class="record-desc">{{ record.summary }}</text>
+                <!-- Tags -->
+                <view v-if="record.tags.length > 0" class="record-tags">
+                  <text v-for="(tag, ti) in record.tags" :key="tag" class="record-tag" :style="ti > 0 ? 'margin-left: 4px;' : ''">{{ tag }}</text>
+                </view>
               </view>
             </view>
           </view>
+
+          <view style="height: 24px;"></view>
         </view>
       </scroll-view>
+
       <BottomTabs active="home" />
     </view>
   </view>
 </template>
 
 <script lang="uts">
-import AppHeader from '../../components/AppHeader/AppHeader.uvue'
 import BottomTabs from '../../components/BottomTabs/BottomTabs.uvue'
 import { records } from '../../common/medora-data.uts'
 
 export default {
-  components: { AppHeader, BottomTabs },
+  components: { BottomTabs },
   data() {
     return { records: records }
   },
   methods: {
-    go(url) {
+    go(url: string) {
       uni.navigateTo({ url: url })
     }
   }
@@ -56,23 +86,239 @@ export default {
 </script>
 
 <style scoped>
-.home-main { padding-top: 24px; }
-.quick-row { display: flex; flex-direction: row; justify-content: space-between; }
-.quick-card { width: 164px; height: 128px; padding: 16px; }
-.quick-record-card { background-color: #314f49; border-radius: 16px; }
-.quick-calculator-card { background-color: #ffffff; border-radius: 16px; }
-.quick-symbol-box { width: 52px; height: 52px; border-radius: 12px; background-color: #647a75; display: flex; flex-direction: row; align-items: center; justify-content: center; }
-.quick-plus { width: 28px; height: 28px; border-radius: 14px; border-width: 3px; border-style: solid; border-color: #ffffff; color: #ffffff; text-align: center; line-height: 25px; font-size: 24px; font-weight: 700; }
-.quick-calc-icon { width: 30px; height: 30px; margin-top: 8px; margin-left: 8px; }
-.quick-title { margin-top: 18px; color: #1a1c1c; font-size: 17px; line-height: 24px; font-weight: 700; }
-.quick-title-light { color: #ffffff; }
-.section-head { margin-top: 32px; display: flex; flex-direction: row; align-items: flex-end; justify-content: space-between; }
-.link-text { color: #3b5e5b; font-size: 12px; line-height: 18px; font-weight: 700; }
-.record-list { margin-top: 16px; }
-.record-card { min-height: 156px; margin-bottom: 14px; padding: 18px; }
-.record-no { color: #717977; font-size: 12px; line-height: 16px; }
-.record-title { margin-top: 6px; color: #1a1c1c; font-size: 22px; line-height: 30px; font-weight: 700; }
-.record-summary { margin-top: 8px; color: #414847; font-size: 14px; line-height: 22px; }
-.tag-row { margin-top: 14px; display: flex; flex-direction: row; }
-.tag-space { margin-right: 6px; }
+/*
+ * ===== 布局计算 (iPhone 16 Pro) =====
+ * 屏幕宽度: 393px
+ * app-page: 852px高
+ * safe-top: 59px (状态栏)
+ * phone-frame: 793px高
+ * bottom-nav: 75px高
+ * 可滚动区域: 793 - 75 = 718px
+ * 内容区左右 padding: 16px → 可用宽度: 393 - 32 = 361px
+ *
+ * ===== Stitch Design Tokens =====
+ * primary: #334b46, on-primary: #ffffff
+ * background: #f9f9f8, surface: #f9f9f8
+ * surface-container-low: #f3f4f3, surface-container-lowest: #ffffff
+ * surface-variant: #e1e3e2, outline-variant: #c1c8c5
+ * on-surface: #191c1c, on-surface-variant: #424846
+ * secondary: #52606b
+ * error-container: #ffdad6, on-error-container: #93000a
+ * tertiary-container: #6a5b50, tertiary: #51443a
+ *
+ * spacing: container-margin=24px, gutter=16px, stack-md=16px, stack-sm=8px, unit=4px
+ * borderRadius: lg=8px, xl=12px, full=9999px
+ * fontSize: display-lg-mobile=32/40/700, headline-md=24/32/600
+ *          body-lg=18/28/400, body-md=16/24/400, body-sm=14/20/400
+ *          label-caps=12/16/500
+ */
+
+/* ===== Header ===== */
+/* Stitch: bg-surface, px-container-margin(24px), py-stack-md(16px), flex, between, center */
+.home-header {
+  background-color: #f9f9f8;
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+/* Medora: font-display-lg-mobile, 32px/40px, 700, text-primary, tracking-tight */
+.brand {
+  color: #334b46;
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 700;
+}
+/* Search button: p-2(8px), rounded-full */
+.search-hit {
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+.search-icon {
+  color: #334b46;
+  font-size: 24px;
+  line-height: 28px;
+}
+
+/* ===== Main content ===== */
+/* Stitch: px-4(16px), pt-4(16px) */
+.home-main {
+  padding: 16px;
+}
+
+/* ===== Quick Actions ===== */
+/* Stitch: grid-cols-2, gap-gutter(16px) */
+/* 可用宽度 361px, 每个按钮: (361-16)/2 = 172px */
+.quick-grid {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+/* Common: rounded-xl(12px), p-stack-md(16px), flex-col, items-start, gap-stack-sm(8px) */
+.quick-btn {
+  width: 172px;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+/* 开始记录: bg-primary(#334b46), shadow */
+.quick-record {
+  background-color: #334b46;
+}
+/* 计算器: bg-surface-container-low(#f3f4f3), border outline-variant/30 */
+.quick-calc {
+  background-color: #f3f4f3;
+  border-width: 1px;
+  border-style: solid;
+  border-color: rgba(193, 200, 197, 0.3);
+}
+/* Icon container: bg-on-primary/20(rgba(255,255,255,0.2)), p-2(8px), rounded-lg(8px) */
+.quick-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  padding: 4px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+.quick-icon-box-record {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+/* Icon: Material Symbols, 24px default */
+.quick-icon {
+  font-size: 24px;
+  line-height: 28px;
+}
+.quick-icon-record {
+  color: #ffffff;
+}
+.quick-icon-calc {
+  color: #334b46;
+}
+/* Label: body-md(16/24), font-medium(500), gap-stack-sm(8px) from icon */
+.quick-label {
+  margin-top: 8px;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
+}
+.quick-label-record {
+  color: #ffffff;
+}
+.quick-label-calc {
+  color: #191c1c;
+}
+
+/* ===== Recent Records ===== */
+/* Stitch: flex-col, gap-stack-lg(32px) from quick actions */
+.recent-section {
+  margin-top: 32px;
+}
+/* Header row: flex, between, items-end */
+.recent-head {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+/* "最近记录": headline-md, Manrope, 24px/32px, 600, text-primary */
+.recent-title {
+  color: #334b46;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+}
+/* "查看全部": label-caps, JetBrains Mono, 12px/16px, 500, uppercase, text-secondary */
+.recent-link {
+  color: #52606b;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+
+/* ===== Record List ===== */
+/* Stitch: grid-cols-1, gap-3(12px) */
+.record-list {
+  display: flex;
+  flex-direction: column;
+}
+/* Record card: bg-surface-container-lowest(#fff), rounded-xl(12px), p-stack-md(16px), border #E2E8F0 */
+.record-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 16px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #E2E8F0;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+}
+/* Top row: flex, between, items-start */
+.record-top {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.record-top-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+/* Case no: label-caps, 12px/16px, 500, uppercase, tracking-widest, text-secondary */
+.record-no {
+  color: #52606b;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+/* Title: body-lg, 18px/28px, 500, text-on-surface(#191c1c), gap-unit(4px) from no */
+.record-name {
+  margin-top: 4px;
+  color: #191c1c;
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 500;
+}
+/* More icon: text-outline-variant(#c1c8c5) */
+.record-more {
+  color: #c1c8c5;
+  font-size: 20px;
+  line-height: 24px;
+}
+/* Description: body-sm, 14px/20px, text-on-surface-variant(#424846), gap-stack-sm(8px) from top */
+.record-desc {
+  margin-top: 8px;
+  color: #424846;
+  font-size: 14px;
+  line-height: 20px;
+}
+/* Tags row: flex, gap-unit(4px), mt-2(8px) */
+.record-tags {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: row;
+}
+/* Tag pill: px-2(8px), py-1(4px), rounded-full, label-caps, text-[10px] */
+/* Card1 tag1: bg-surface-variant/30, text-on-surface-variant */
+.record-tag {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background-color: rgba(225, 227, 226, 0.3);
+  color: #424846;
+  font-size: 10px;
+  line-height: 14px;
+  font-weight: 500;
+}
 </style>
