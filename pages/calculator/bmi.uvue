@@ -76,12 +76,12 @@
             <!-- Health Insight Chips -->
             <view class="chips-row">
               <view class="chip chip-tertiary" @tap="chipToast">
-                <text class="chip-icon">♥</text>
-                <text class="chip-text">心血管风险评估</text>
+                <text class="chip-icon chip-tertiary-icon">♥</text>
+                <text class="chip-text chip-tertiary-text">心血管风险评估</text>
               </view>
               <view class="chip chip-primary" @tap="chipToast">
-                <text class="chip-icon">🥗</text>
-                <text class="chip-text">建议均衡膳食</text>
+                <text class="chip-icon chip-primary-icon">🥗</text>
+                <text class="chip-text chip-primary-text">建议均衡膳食</text>
               </view>
             </view>
           </view>
@@ -411,10 +411,10 @@ export default {
   line-height: 18px;
   margin-right: 4px;
 }
-.chip-tertiary .chip-icon {
+.chip-tertiary-icon {
   color: #754f41;
 }
-.chip-primary .chip-icon {
+.chip-primary-icon {
   color: #3b5e5b;
 }
 .chip-text {
@@ -422,10 +422,10 @@ export default {
   line-height: 15px;
   font-weight: 500;
 }
-.chip-tertiary .chip-text {
+.chip-tertiary-text {
   color: #754f41;
 }
-.chip-primary .chip-text {
+.chip-primary-text {
   color: #3b5e5b;
 }
 

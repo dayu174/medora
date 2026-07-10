@@ -27,7 +27,7 @@ test("app data exposes Medora tab navigation", () => {
   assert.equal(tabs[0].path, "/pages/home/index");
   assert.equal(tabs[0].activeIcon, "/static/tabs/home-active.png");
   assert.equal(tabs[1].icon, "/static/tabs/book.png");
-  assert.equal(tabs[2].avatar, "/static/tabs/avatar.png");
+  assert.equal(tabs[2].avatar, "/static/tabs/avatar.svg");
 });
 
 test("records include Stitch clinical examples", () => {
@@ -40,7 +40,7 @@ test("knowledge data includes heart failure detail", () => {
   const { heartFailure } = loadDataModule();
   assert.equal(heartFailure.title, "心力衰竭");
   assert.ok(heartFailure.symptomGroups.length >= 2);
-  assert.ok(heartFailure.treatments.length >= 4);
+  assert.ok(heartFailure.treatments.coreDrugs.length >= 4);
 });
 
 test("settings data exposes account and notification routes", () => {

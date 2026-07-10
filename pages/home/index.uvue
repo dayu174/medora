@@ -2,10 +2,10 @@
   <view class="app-page safe-top">
     <view class="phone-frame">
       <!-- Header: bg-surface(#f9f9f8), px-24px, py-16px, flex, between, center -->
-      <view class="home-header">
+      <view :class="entryClass('home-header', 0)">
         <text class="brand">Medora</text>
         <view class="search-hit" @tap="go('/pages/library/index')">
-          <text class="search-icon">⌕</text>
+          <image class="search-icon-img" src="/static/icons/search.png" mode="aspectFit"></image>
         </view>
       </view>
 
@@ -16,23 +16,23 @@
           <!-- Quick Actions: 2 col grid, gap-16px -->
           <view class="quick-grid">
             <!-- 开始记录: bg-primary(#334b46), rounded-xl(12px), p-16px, flex-col, items-start -->
-            <view class="quick-btn quick-record" @tap="go('/pages/record/index')">
+            <view :class="quickClass('record')" @touchstart="pressSurface('record')" @touchend="releaseSurface" @touchcancel="releaseSurface" @tap="go('/pages/record/index')">
               <view class="quick-icon-box quick-icon-box-record">
                 <text class="quick-icon quick-icon-record">+</text>
               </view>
               <text class="quick-label quick-label-record">开始记录</text>
             </view>
             <!-- 计算器: bg-surface-container-low(#f3f4f3), rounded-xl(12px), p-16px, border outline-variant/30 -->
-            <view class="quick-btn quick-calc" @tap="go('/pages/calculator/index')">
+            <view :class="quickClass('calc')" @touchstart="pressSurface('calc')" @touchend="releaseSurface" @touchcancel="releaseSurface" @tap="go('/pages/calculator/index')">
               <view class="quick-icon-box">
-                <image class="quick-icon-img" src="/static/icons/calculator.png" mode="aspectFit"></image>
+                <image class="quick-icon-img" src="/static/icons/calculator.svg" mode="aspectFit"></image>
               </view>
               <text class="quick-label quick-label-calc">计算器</text>
             </view>
           </view>
 
           <!-- Recent Records: flex-col -->
-          <view class="recent-section">
+          <view :class="entryClass('recent-section', 2)">
             <!-- Header row: flex, between, items-end -->
             <view class="recent-head">
               <text class="recent-title">最近记录</text>
@@ -40,7 +40,7 @@
             </view>
             <!-- Record list -->
             <view class="record-list">
-              <view v-for="(record, index) in records" :key="record.no" class="record-card" :style="record.draft ? 'opacity: 0.75;' : ''" @tap="goDetail(index)">
+              <view v-for="(record, index) in records" :key="record.no" :class="recordCardClass(index)" :style="record.draft ? 'opacity: 0.75;' : ''" @touchstart="pressSurface('record-' + index)" @touchend="releaseSurface" @touchcancel="releaseSurface" @tap="goDetail(index)">
                 <!-- Top row: flex, between, items-start -->
                 <view class="record-top">
                   <view class="record-top-left">
@@ -74,17 +74,42 @@ import { records } from '../../common/medora-data.uts'
 export default {
   components: { BottomTabs },
   data() {
-    return { records: records }
+    return { records: records, pageReady: false, pressedSurface: '' }
+  },
+  onReady() {
+    setTimeout(() => { this.pageReady = true }, 16)
   },
   methods: {
     go(url: string) {
-      uni.navigateTo({ url: url })
+      uni.navigateTo({ url: url, animationType: 'fade-in', animationDuration: 360 } as any)
     },
     goDetail(index: number) {
       const record = this.records[index]
       if (record != null && (record as any).diseaseId != null) {
-        uni.navigateTo({ url: '/pages/knowledge-detail/index?id=' + (record as any).diseaseId })
+        uni.navigateTo({ url: '/pages/knowledge-detail/index?id=' + (record as any).diseaseId, animationType: 'fade-in', animationDuration: 360 } as any)
       }
+    },
+    entryClass(base: string, index: number) {
+      let value = base + ' motion-enter'
+      if (this.pageReady) value += ' motion-enter-active'
+      if (index > 0) value += ' motion-delay-' + index
+      return value
+    },
+    quickClass(kind: string) {
+      let value = this.entryClass(kind == 'record' ? 'quick-btn quick-record' : 'quick-btn quick-calc', 1)
+      if (this.pressedSurface == kind) value += ' quick-btn-pressed'
+      return value
+    },
+    recordCardClass(index: number) {
+      let value = this.entryClass('record-card', index + 1)
+      if (this.pressedSurface == 'record-' + index) value += ' record-card-pressed'
+      return value
+    },
+    pressSurface(key: string) {
+      this.pressedSurface = key
+    },
+    releaseSurface() {
+      this.pressedSurface = ''
     }
   }
 }
@@ -145,11 +170,7 @@ export default {
   align-items: center;
   justify-content: center;
 }
-.search-icon {
-  color: #334b46;
-  font-size: 24px;
-  line-height: 28px;
-}
+.search-icon-img { width: 22px; height: 22px; }
 
 /* ===== Main content ===== */
 /* Stitch: px-4(16px), pt-4(16px) */
@@ -168,11 +189,14 @@ export default {
 /* Common: rounded-xl(12px), p-stack-md(16px), flex-col, items-start, gap-stack-sm(8px) */
 .quick-btn {
   width: 172px;
+  height: 128px;
+  box-sizing: border-box;
   border-radius: 12px;
   padding: 16px;
   display: flex;
   flex-direction: column;
 }
+.quick-btn-pressed { transform: scale(0.98); opacity: 0.94; }
 /* 开始记录: bg-primary(#334b46), shadow */
 .quick-record {
   background-color: #334b46;
@@ -207,8 +231,8 @@ export default {
   color: #ffffff;
 }
 .quick-icon-img {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
 }
 .quick-icon-calc {
   color: #334b46;
@@ -216,7 +240,7 @@ export default {
 /* Label: body-md(16/24), font-medium(500), gap-stack-sm(8px) from icon */
 .quick-label {
   margin-top: 8px;
-  font-size: 16px;
+  font-size: 17px;
   line-height: 24px;
   font-weight: 500;
 }
@@ -273,6 +297,7 @@ export default {
   display: flex;
   flex-direction: column;
 }
+.record-card-pressed { transform: scale(0.99); opacity: 0.9; }
 /* Top row: flex, between, items-start */
 .record-top {
   display: flex;

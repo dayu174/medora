@@ -1,0 +1,76 @@
+<template>
+  <view v-if="state != 'idle'" class="archive-flow">
+    <view :class="stepClass(1)"><view :class="dotClass(1)"></view><text class="archive-step-copy">收集临床信息</text></view>
+    <view class="archive-connector"></view>
+    <view :class="stepClass(2)"><view :class="dotClass(2)"></view><text class="archive-step-copy">结构化整理</text></view>
+    <view class="archive-connector"></view>
+    <view :class="stepClass(3)"><view :class="dotClass(3)"></view><text class="archive-step-copy">生成知识卡片</text></view>
+
+    <view v-if="state == 'ready'" :class="resultClass()">
+      <text class="archive-result-eyebrow">AI 归档预览</text>
+      <text class="archive-result-title">{{ titleCopy() }}</text>
+      <text class="archive-result-body">已按{{ department }}病例记录结构整理，可继续补充症状与用药方案。</text>
+      <view class="archive-result-tags">
+        <text class="archive-result-tag">{{ department }}</text>
+        <text v-if="voiceAttached" class="archive-result-tag">语音附件</text>
+        <text class="archive-result-tag">待复核</text>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script lang="uts">
+export default {
+  props: {
+    state: { type: String, default: 'idle' },
+    diseaseName: { type: String, default: '' },
+    department: { type: String, default: '' },
+    voiceAttached: { type: Boolean, default: false }
+  },
+  data() {
+    return { resultVisible: false }
+  },
+  watch: {
+    state(value: string) {
+      if (value == 'ready') {
+        this.resultVisible = false
+        setTimeout(() => { this.resultVisible = true }, 16)
+      } else {
+        this.resultVisible = false
+      }
+    }
+  },
+  methods: {
+    stepClass(index: number) {
+      const value = this.state == 'capturing' ? 1 : this.state == 'structuring' ? 2 : this.state == 'ready' ? 3 : 0
+      return index <= value ? 'archive-step archive-step-active' : 'archive-step'
+    },
+    dotClass(index: number) {
+      const value = this.state == 'capturing' ? 1 : this.state == 'structuring' ? 2 : this.state == 'ready' ? 3 : 0
+      return index <= value ? 'archive-step-dot archive-step-dot-active' : 'archive-step-dot'
+    },
+    resultClass() {
+      return this.resultVisible ? 'archive-result motion-enter motion-enter-active motion-delay-1' : 'archive-result motion-enter'
+    },
+    titleCopy() {
+      return this.diseaseName.length > 0 ? this.diseaseName : '未命名病例'
+    }
+  }
+}
+</script>
+
+<style scoped>
+.archive-flow { margin-top: 12px; padding: 12px; border-radius: 8px; background-color: #ffffff; border-width: 1px; border-style: solid; border-color: #d7e6e3; display: flex; flex-direction: column; }
+.archive-step { display: flex; flex-direction: row; align-items: center; opacity: 0.42; transition-property: opacity, transform; transition-duration: 260ms; transition-timing-function: ease-out; }
+.archive-step-active { opacity: 1; transform: translateX(2px); }
+.archive-step-dot { width: 8px; height: 8px; margin-right: 8px; border-radius: 4px; background-color: #c1c8c6; transition-property: background-color; transition-duration: 260ms; }
+.archive-step-dot-active { background-color: #3b5e5b; }
+.archive-step-copy { color: #53615f; font-size: 11px; line-height: 16px; }
+.archive-connector { width: 1px; height: 8px; margin-left: 4px; background-color: #d7e6e3; }
+.archive-result { margin-top: 12px; padding: 12px; border-radius: 8px; background-color: #eef5f3; display: flex; flex-direction: column; }
+.archive-result-eyebrow { color: #3b5e5b; font-size: 10px; line-height: 14px; font-weight: 700; }
+.archive-result-title { margin-top: 4px; color: #1a1c1c; font-size: 16px; line-height: 22px; font-weight: 700; }
+.archive-result-body { margin-top: 4px; color: #53615f; font-size: 12px; line-height: 18px; }
+.archive-result-tags { margin-top: 8px; display: flex; flex-direction: row; flex-wrap: wrap; }
+.archive-result-tag { height: 20px; margin-right: 6px; padding-left: 8px; padding-right: 8px; border-radius: 10px; background-color: #ffffff; color: #3b5e5b; font-size: 10px; line-height: 20px; font-weight: 700; }
+</style>

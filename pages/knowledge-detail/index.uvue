@@ -2,12 +2,12 @@
   <view class="app-page safe-top">
     <view class="phone-frame">
       <!-- Header -->
-      <view class="detail-header">
+      <view :class="pageReady ? 'detail-header motion-enter motion-enter-active' : 'detail-header motion-enter'">
         <view class="back-hit" @tap="goBack">
           <text class="back-icon">‹</text>
         </view>
         <text class="detail-title">{{ data.title }}</text>
-        <view class="bookmark-hit" @tap="toggleBookmark">
+        <view :class="bookmarkClass()" @touchstart="bookmarkPressed = true" @touchend="bookmarkPressed = false" @touchcancel="bookmarkPressed = false" @tap="toggleBookmark">
           <text class="bookmark-icon">{{ isBookmarked ? '★' : '☆' }}</text>
         </view>
       </view>
@@ -16,7 +16,7 @@
       <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
         <view class="content">
           <!-- Summary/Hero Section -->
-          <view class="hero-section">
+          <view :class="entryClass('hero-section', 1)">
             <view class="tag-row">
               <text class="tag tag-primary">{{ data.tags[0] }}</text>
               <text class="tag tag-secondary" style="margin-left: 8px;">{{ data.tags[1] }}</text>
@@ -25,13 +25,13 @@
           </view>
 
           <!-- Knowledge Card: Symptoms (症状) -->
-          <view class="k-card">
+          <view :class="entryClass('k-card', 2)">
             <view class="k-card-header">
               <text class="k-card-icon">●</text>
               <text class="k-card-heading">症状</text>
             </view>
             <view class="symptom-grid">
-              <view v-for="group in data.symptomGroups" :key="group.title" class="symptom-col">
+              <view v-for="(group, index) in data.symptomGroups" :key="group.title" :class="index == 0 ? 'symptom-col symptom-col-left' : 'symptom-col'">
                 <text class="symptom-group-title">{{ group.title }}</text>
                 <view v-for="item in group.items" :key="item" class="symptom-row">
                   <text class="check-icon">✓</text>
@@ -42,7 +42,7 @@
           </view>
 
           <!-- Knowledge Card: Diagnosis (诊断要点) -->
-          <view class="k-card">
+          <view :class="entryClass('k-card', 3)">
             <view class="k-card-header">
               <text class="k-card-icon">●</text>
               <text class="k-card-heading">诊断要点</text>
@@ -76,7 +76,7 @@
           </view>
 
           <!-- Knowledge Card: Treatment (治疗方案) -->
-          <view class="k-card">
+          <view :class="entryClass('k-card', 4)">
             <view class="k-card-header">
               <text class="k-card-icon">●</text>
               <text class="k-card-heading">治疗方案</text>
@@ -118,7 +118,9 @@ export default {
   data() {
     return {
       data: diseases.heartFailure,
-      isBookmarked: false
+      isBookmarked: false,
+      pageReady: false,
+      bookmarkPressed: false
     }
   },
   onLoad(options: any) {
@@ -127,6 +129,9 @@ export default {
       this.data = (diseases as any)[id]
     }
   },
+  onReady() {
+    setTimeout(() => { this.pageReady = true }, 16)
+  },
   methods: {
     goBack() {
       uni.navigateBack()
@@ -134,6 +139,15 @@ export default {
     toggleBookmark() {
       this.isBookmarked = !this.isBookmarked
       uni.showToast({ title: this.isBookmarked ? '已收藏' : '已取消收藏', icon: 'none' })
+    },
+    entryClass(base: string, index: number) {
+      let value = base + ' motion-enter'
+      if (this.pageReady) value += ' motion-enter-active'
+      if (index > 0) value += ' motion-delay-' + index
+      return value
+    },
+    bookmarkClass() {
+      return this.bookmarkPressed ? 'bookmark-hit motion-press motion-press-active' : 'bookmark-hit motion-press'
     }
   }
 }
@@ -266,7 +280,7 @@ export default {
   display: flex;
   flex-direction: column;
 }
-.symptom-col:first-child {
+.symptom-col-left {
   margin-right: 12px;
 }
 .symptom-group-title {

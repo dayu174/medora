@@ -32,7 +32,7 @@ for (const file of files) {
   const source = fs.readFileSync(file, "utf8");
   const styleBlocks = source.match(/<style[\s\S]*?<\/style>/g) || [];
   for (const block of styleBlocks) {
-    const style = block.replace(/<style[^>]*>/, "").replace("</style>", "");
+    const style = block.replace(/<style[^>]*>/, "").replace("</style>", "").replace(/\/\*[\s\S]*?\*\//g, "");
     if (file.replace(/\\/g, "/") === "pages/record/index.uvue" && /background-color\s*:\s*#000000\b/i.test(style)) {
       errors.push(`${file}: record page must use the Medora light background`);
     }

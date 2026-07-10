@@ -14,7 +14,7 @@ export const tabs = [
     path: '/pages/library/index',
     mark: '书',
     icon: '/static/tabs/book.png',
-    activeIcon: '/static/tabs/book-active.png',
+    activeIcon: '/static/tabs/book.svg',
     avatar: ''
   },
   {
@@ -24,7 +24,7 @@ export const tabs = [
     mark: '人',
     icon: '',
     activeIcon: '',
-    avatar: '/static/tabs/avatar.png'
+    avatar: '/static/tabs/avatar.svg'
   }
 ]
 

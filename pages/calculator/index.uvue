@@ -2,7 +2,7 @@
   <view class="app-page safe-top">
     <view class="phone-frame">
       <!-- Header: 标题居中，无右上角按钮 -->
-      <view class="calc-header">
+      <view :class="pageReady ? 'calc-header motion-enter motion-enter-active' : 'calc-header motion-enter'">
         <view class="back-hit" @tap="goBack">
           <text class="back-icon">‹</text>
         </view>
@@ -11,7 +11,7 @@
       </view>
 
       <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
-        <view class="content calc-content">
+        <view :class="pageReady ? 'content calc-content motion-enter motion-enter-active motion-delay-1' : 'content calc-content motion-enter motion-delay-1'">
           <!-- Search -->
           <view class="search-box">
             <text class="search-icon">⌕</text>
@@ -25,7 +25,7 @@
 
           <!-- Calculator List -->
           <view class="calculator-list">
-            <view v-for="item in filteredCalculators" :key="item.name" :class="item.active ? 'calculator-item calculator-item-active' : 'calculator-item'" @tap="go(item.path)">
+            <view v-for="(item, index) in filteredCalculators" :key="item.name" :class="calculatorClass(item, index)" @touchstart="pressedCalculator = index" @touchend="pressedCalculator = -1" @touchcancel="pressedCalculator = -1" @tap="go(item.path)">
               <view class="calculator-copy">
                 <text class="calc-name">{{ item.name }}</text>
                 <text class="row-desc">{{ item.category }}</text>
@@ -33,7 +33,7 @@
               <text class="setting-arrow">›</text>
             </view>
           </view>
-          <view v-if="filteredCalculators.length == 0" class="empty-state">
+          <view v-if="filteredCalculators.length == 0" :class="pageReady ? 'empty-state motion-enter motion-enter-active motion-delay-2' : 'empty-state motion-enter motion-delay-2'">
             <text class="empty-text">该分类暂无计算器</text>
           </view>
         </view>
@@ -65,8 +65,13 @@ export default {
         { name: 'qSOFA 筛查', category: '脓毒症筛查', tab: '常用', active: false, path: '/pages/calculator/qsofa' },
         { name: 'Wells 评分 (DVT)', category: '深静脉血栓', tab: '心血管', active: false, path: '/pages/calculator/wells' },
         { name: 'CrCl / eGFR', category: '肾功能评估', tab: '肾脏', active: false, path: '/pages/calculator/crcl' }
-      ]
+      ],
+      pageReady: false,
+      pressedCalculator: -1
     }
+  },
+  onReady() {
+    setTimeout(() => { this.pageReady = true }, 16)
   },
   methods: {
     goBack() {
@@ -74,8 +79,15 @@ export default {
     },
     go(url: string) {
       if (url.length > 0) {
-        uni.navigateTo({ url: url })
+        uni.navigateTo({ url: url, animationType: 'fade-in', animationDuration: 360 } as any)
       }
+    },
+    calculatorClass(item: any, index: number) {
+      let value = item.active ? 'calculator-item calculator-item-active motion-enter' : 'calculator-item motion-enter'
+      if (this.pageReady) value += ' motion-enter-active'
+      value += ' motion-delay-' + (index + 1)
+      if (this.pressedCalculator == index) value += ' calculator-item-pressed'
+      return value
     }
   }
 }
@@ -126,6 +138,7 @@ export default {
 .calc-tab { margin-right: 8px; }
 .calculator-list { margin-top: 24px; }
 .calculator-item { min-height: 68px; padding: 14px; margin-bottom: 12px; border-radius: 12px; background-color: #ffffff; border-width: 1px; border-style: solid; border-color: #e3e2e2; display: flex; flex-direction: row; align-items: center; }
+.calculator-item-pressed { transform: scale(0.99); opacity: 0.9; }
 .calculator-item-active { border-color: #3b5e5b; background-color: #eef5f3; }
 .calculator-copy { flex: 1; display: flex; flex-direction: column; }
 .calc-name { color: #1a1c1c; font-size: 16px; line-height: 22px; font-weight: 700; }

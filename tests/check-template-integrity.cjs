@@ -20,7 +20,7 @@ for (const file of listFiles("pages")) {
   if (mojibake.test(source)) errors.push(`${file}: contains mojibake text`);
   if (/action="[^"]*(?:\r?\n|\/>)/.test(source)) errors.push(`${file}: malformed action attribute`);
   if (/<text[^>]*>[^<]*\/text>/.test(source)) errors.push(`${file}: malformed text closing tag`);
-  if (file.replace(/\\/g, "/") === "pages/home/index.uvue" && !source.includes('actionIcon="/static/icons/search.png"')) {
+  if (file.replace(/\\/g, "/") === "pages/home/index.uvue" && !source.includes('src="/static/icons/search.png"')) {
     errors.push(`${file}: home header must use the search icon asset`);
   }
   if (file.replace(/\\/g, "/") === "pages/library/index.uvue") {

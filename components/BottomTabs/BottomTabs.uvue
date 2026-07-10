@@ -1,9 +1,10 @@
 <template>
   <view class="bottom-nav">
-    <view v-for="tab in tabs" :key="tab.key" :class="active == tab.key ? 'tab-item tab-item-active' : 'tab-item'" @tap="go(tab.path)">
-      <image v-if="tab.avatar.length > 0" class="tab-avatar" :src="tab.avatar" mode="aspectFill"></image>
-      <image v-if="tab.avatar.length == 0" class="tab-icon" :src="active == tab.key ? tab.activeIcon : tab.icon" mode="aspectFit"></image>
+    <view v-for="tab in tabs" :key="tab.key" :class="tabClass(tab)" @touchstart="press(tab.key)" @touchend="release" @touchcancel="release" @tap="go(tab.path, tab.key)">
+      <image v-if="tab.avatar.length > 0" :class="avatarClass(tab)" :src="tab.avatar" mode="aspectFit"></image>
+      <image v-if="tab.avatar.length == 0" :class="iconClass(tab)" :src="localActive == tab.key ? tab.activeIcon : tab.icon" mode="aspectFit"></image>
       <text class="tab-text">{{ tab.text }}</text>
+      <view v-if="localActive == tab.key" class="tab-active-indicator"></view>
     </view>
   </view>
 </template>
@@ -17,15 +18,43 @@ export default {
   },
   data() {
     return {
-      tabs: tabs
+      tabs: tabs,
+      localActive: this.active,
+      pressedKey: ''
     }
   },
   methods: {
-    go(path) {
+    tabClass(tab: any) {
+      let value = this.localActive == tab.key ? 'tab-item tab-item-active motion-press' : 'tab-item motion-press'
+      if (this.pressedKey == tab.key) value += ' motion-press-active'
+      return value
+    },
+    iconClass(tab: any) {
+      return this.localActive == tab.key ? 'tab-icon tab-icon-active' : 'tab-icon'
+    },
+    avatarClass(tab: any) {
+      return this.localActive == tab.key ? 'tab-avatar tab-avatar-active' : 'tab-avatar'
+    },
+    press(key: string) {
+      this.pressedKey = key
+    },
+    release() {
+      this.pressedKey = ''
+    },
+    go(path: string, key: string) {
       if (path.length > 0) {
-        uni.redirectTo({ url: path })
+        this.localActive = key
+        setTimeout(() => {
+          uni.redirectTo({ url: path, animationType: 'fade-in', animationDuration: 320 } as any)
+        }, 90)
       }
     }
   }
 }
 </script>
+
+<style scoped>
+.tab-icon-active { transform: scale(1.08); opacity: 1; transition-property: transform, opacity; transition-duration: 220ms; transition-timing-function: ease-out; }
+.tab-avatar-active { transform: scale(1.06); opacity: 1; transition-property: transform, opacity; transition-duration: 220ms; transition-timing-function: ease-out; }
+.tab-active-indicator { width: 22px; height: 3px; margin-top: 2px; border-radius: 2px; background-color: #3b5e5b; opacity: 0.78; }
+</style>

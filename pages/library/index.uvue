@@ -3,12 +3,12 @@
     <view class="phone-frame">
       <AppHeader title="Medora" :brand="true" :compact="true" actionIcon="/static/icons/search.png" @action="onSearch" />
       <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
-        <view class="content library-main">
+        <view :class="entryClass('content library-main', 0)">
           <view class="tabs-row">
             <text v-for="tab in categoryTabs" :key="tab" :class="activeCategory == tab ? 'ghost-button ghost-button-active cat-tab' : 'ghost-button cat-tab'" @tap="activeCategory = tab">{{ tab }}</text>
           </view>
           <view class="article-list">
-            <view v-for="card in cards" :key="card.title" class="article-card card" @tap="go('/pages/knowledge-detail/index?id=' + card.diseaseId)">
+            <view v-for="(card, index) in cards" :key="card.title" :class="articleClass(index)" @touchstart="pressCard(index)" @touchend="releaseCard" @touchcancel="releaseCard" @tap="go('/pages/knowledge-detail/index?id=' + card.diseaseId)">
               <view class="article-head">
                 <text class="article-title">{{ card.title }}</text>
                 <text class="pill">{{ card.dept }}</text>
@@ -38,15 +38,37 @@ export default {
     return {
       cards: knowledgeCards,
       categoryTabs: ['全部', '内科', '外科', '药理'],
-      activeCategory: '全部'
+      activeCategory: '全部',
+      pageReady: false,
+      pressedCard: -1
     }
+  },
+  onReady() {
+    setTimeout(() => { this.pageReady = true }, 16)
   },
   methods: {
     onSearch() {
       uni.showToast({ title: '搜索功能即将上线', icon: 'none' })
     },
-    go(url) {
-      uni.navigateTo({ url: url })
+    go(url: string) {
+      uni.navigateTo({ url: url, animationType: 'fade-in', animationDuration: 360 } as any)
+    },
+    entryClass(base: string, index: number) {
+      let value = base + ' motion-enter'
+      if (this.pageReady) value += ' motion-enter-active'
+      if (index > 0) value += ' motion-delay-' + index
+      return value
+    },
+    articleClass(index: number) {
+      let value = this.entryClass('article-card card', index + 1)
+      if (this.pressedCard == index) value += ' article-card-pressed'
+      return value
+    },
+    pressCard(index: number) {
+      this.pressedCard = index
+    },
+    releaseCard() {
+      this.pressedCard = -1
     }
   }
 }
@@ -58,6 +80,7 @@ export default {
 .cat-tab { margin-right: 8px; }
 .article-list { margin-top: 24px; }
 .article-card { min-height: 160px; margin-bottom: 16px; padding: 18px; }
+.article-card-pressed { transform: scale(0.99); opacity: 0.9; }
 .article-head { display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
 .article-title { color: #1a1c1c; font-size: 20px; line-height: 28px; font-weight: 700; }
 .article-summary { margin-top: 12px; color: #414847; font-size: 14px; line-height: 22px; }

@@ -39,7 +39,7 @@
             <view class="input-card">
               <text class="input-label">性别</text>
               <view class="gender-row">
-                <view class="gender-btn" :class="gender == 'male' ? 'gender-btn-active' : ''" @tap="gender = 'male'">
+                <view class="gender-btn gender-btn-left" :class="gender == 'male' ? 'gender-btn-active' : ''" @tap="gender = 'male'">
                   <text class="gender-icon">♂</text>
                   <text class="gender-text">男性</text>
                 </view>
@@ -323,7 +323,7 @@ export default {
   align-items: center;
   justify-content: center;
 }
-.gender-btn:first-child {
+.gender-btn-left {
   margin-right: 8px;
 }
 .gender-btn-active {

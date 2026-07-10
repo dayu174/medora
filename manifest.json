@@ -15,6 +15,10 @@
       "autoclose": true,
       "delay": 0
     },
-    "modules": {}
+    "modules": {
+      "Record": {
+        "description": "临床语音记录"
+      }
+    }
   }
 }

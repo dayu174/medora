@@ -21,17 +21,20 @@ const errors = [];
 
 for (const file of listFiles("pages")) {
   const source = fs.readFileSync(file, "utf8");
-  if (!source.includes('<scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">')) {
+  const template = source.replace(/<!--[\s\S]*?-->/g, "");
+  if (!template.includes('<scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">')) {
     errors.push(`${file}: missing page-scroll`);
   }
-  if (source.includes("<BottomTabs") && !/<\/scroll-view>\s*<BottomTabs/.test(source)) {
-    errors.push(`${file}: BottomTabs must sit outside page-scroll`);
+  if (template.includes("<BottomTabs")) {
+    const bottomTabsIndex = template.indexOf("<BottomTabs");
+    const lastScrollCloseIndex = template.lastIndexOf("</scroll-view>");
+    if (bottomTabsIndex < lastScrollCloseIndex) errors.push(`${file}: BottomTabs must sit outside page-scroll`);
   }
-  const viewOpen = count(source, /<view(\s|>)/g);
-  const viewClose = count(source, /<\/view>/g);
+  const viewOpen = count(template, /<view(\s|>)/g);
+  const viewClose = count(template, /<\/view>/g);
   if (viewOpen !== viewClose) errors.push(`${file}: view tags unbalanced`);
-  const scrollOpen = count(source, /<scroll-view(\s|>)/g);
-  const scrollClose = count(source, /<\/scroll-view>/g);
+  const scrollOpen = count(template, /<scroll-view(\s|>)/g);
+  const scrollClose = count(template, /<\/scroll-view>/g);
   if (scrollOpen !== scrollClose) errors.push(`${file}: scroll-view tags unbalanced`);
 }
 

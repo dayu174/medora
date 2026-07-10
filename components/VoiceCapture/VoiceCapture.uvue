@@ -1,0 +1,178 @@
+<template>
+  <view class="voice-capture">
+    <view class="voice-capture-copy">
+      <text class="voice-eyebrow">临床语音记录</text>
+      <text class="voice-status">{{ statusCopy() }}</text>
+    </view>
+
+    <view v-if="recordState == 'recording'" class="voice-wave-row">
+      <view v-for="bar in waveBars" :key="bar" :class="waveClass(bar)"></view>
+    </view>
+
+    <view :class="actionClass()" @touchstart="pressAction" @touchend="releaseAction" @touchcancel="releaseAction" @tap="toggleRecording">
+      <view :class="ringClass()"></view>
+      <view class="voice-action-core">
+        <view v-if="recordState != 'recording'" class="voice-mic-stem"></view>
+        <view v-if="recordState != 'recording'" class="voice-mic-base"></view>
+        <view v-if="recordState == 'recording'" class="voice-stop-square"></view>
+      </view>
+    </view>
+
+    <text v-if="recordState == 'recording'" class="voice-duration">{{ displayDuration() }}</text>
+    <text v-if="errorMessage.length > 0" class="voice-error">{{ errorMessage }}</text>
+  </view>
+</template>
+
+<script lang="uts">
+export default {
+  data() {
+    return {
+      recorder: null as any,
+      recordState: 'idle',
+      durationSeconds: 0,
+      recordTimer: 0 as any,
+      pulseTimer: 0 as any,
+      pulsePhase: 0,
+      wavePhase: 0,
+      pressed: false,
+      errorMessage: '',
+      waveBars: [0, 1, 2, 3, 4]
+    }
+  },
+  mounted() {
+    this.setupRecorder()
+    // The timer drives a quiet visual pulse without a costly continuous animation layer.
+    this.pulseTimer = setInterval(() => {
+      this.pulsePhase = this.pulsePhase == 0 ? 1 : 0
+      this.wavePhase = (this.wavePhase + 1) % 4
+    }, 520)
+  },
+  unmounted() {
+    this.clearRecordTimer()
+    if (this.pulseTimer != 0) clearInterval(this.pulseTimer)
+    if (this.recorder != null) {
+      this.recorder.offStart()
+      this.recorder.offStop()
+      this.recorder.offError()
+      if (this.recordState == 'recording') this.recorder.stop()
+    }
+  },
+  methods: {
+    setupRecorder() {
+      this.recorder = uni.getRecorderManager()
+      this.recorder.onStart(() => {
+        this.recordState = 'recording'
+        this.durationSeconds = 0
+        this.errorMessage = ''
+        this.startRecordTimer()
+      })
+      this.recorder.onStop((result: any) => {
+        const capturedDuration = this.durationSeconds
+        this.clearRecordTimer()
+        this.recordState = 'processing'
+        this.$emit('processing')
+        setTimeout(() => {
+          this.recordState = 'ready'
+          this.$emit('complete', { filePath: result.tempFilePath, duration: capturedDuration })
+        }, 420)
+      })
+      this.recorder.onError((error: any) => {
+        this.clearRecordTimer()
+        this.recordState = 'error'
+        this.errorMessage = error.errCode == 1107601 ? '未获得麦克风权限，请在系统设置中开启。' : '录音暂时不可用，请稍后重试。'
+        this.$emit('error', error)
+      })
+    },
+    toggleRecording() {
+      if (this.recordState == 'processing') return
+      if (this.recordState == 'recording') {
+        this.recorder.stop()
+        return
+      }
+      const authorization = uni.getAppAuthorizeSetting()
+      if (authorization.microphoneAuthorized == 'denied' || authorization.microphoneAuthorized == 'config error') {
+        this.recordState = 'error'
+        this.errorMessage = '请在 iPhone 设置中允许 Medora 使用麦克风。'
+        return
+      }
+      this.errorMessage = ''
+      this.recorder.start({ duration: 600000, format: 'm4a' } as any)
+    },
+    startRecordTimer() {
+      this.clearRecordTimer()
+      this.recordTimer = setInterval(() => {
+        this.durationSeconds += 1
+      }, 1000)
+    },
+    clearRecordTimer() {
+      if (this.recordTimer != 0) {
+        clearInterval(this.recordTimer)
+        this.recordTimer = 0
+      }
+    },
+    displayDuration() {
+      const minute = Math.floor(this.durationSeconds / 60)
+      const second = this.durationSeconds % 60
+      const minuteText = minute < 10 ? '0' + minute : minute.toString()
+      const secondText = second < 10 ? '0' + second : second.toString()
+      return minuteText + ':' + secondText
+    },
+    statusCopy() {
+      if (this.recordState == 'recording') return '正在采集临床口述，点击结束'
+      if (this.recordState == 'processing') return '正在整理录音内容'
+      if (this.recordState == 'ready') return '语音已附加到本次记录'
+      if (this.recordState == 'error') return '语音记录暂不可用'
+      return '点击开始口述，结束后自动归入本次记录'
+    },
+    waveClass(index: number) {
+      const level = (this.wavePhase + index * 2) % 4
+      return 'voice-wave-bar voice-wave-level-' + level
+    },
+    actionClass() {
+      let value = 'voice-action motion-press'
+      if (this.recordState == 'idle' || this.recordState == 'ready' || this.recordState == 'error') {
+        value += this.pulsePhase == 0 ? ' voice-action-breathe-a' : ' voice-action-breathe-b'
+      }
+      if (this.recordState == 'recording') value += ' voice-action-recording'
+      if (this.recordState == 'processing') value += ' voice-action-processing'
+      if (this.pressed) value += ' motion-press-active'
+      return value
+    },
+    ringClass() {
+      return this.recordState == 'recording' ? 'voice-action-ring voice-action-ring-active' : 'voice-action-ring'
+    },
+    pressAction() {
+      this.pressed = true
+    },
+    releaseAction() {
+      this.pressed = false
+    }
+  }
+}
+</script>
+
+<style scoped>
+.voice-capture { position: relative; min-height: 92px; margin-top: 14px; padding: 14px; border-radius: 12px; background-color: #eef5f3; border-width: 1px; border-style: solid; border-color: #d7e6e3; display: flex; flex-direction: row; align-items: center; }
+.voice-capture-copy { flex: 1; display: flex; flex-direction: column; }
+.voice-eyebrow { color: #3b5e5b; font-size: 12px; line-height: 16px; font-weight: 700; }
+.voice-status { margin-top: 4px; color: #53615f; font-size: 12px; line-height: 18px; }
+.voice-wave-row { width: 46px; height: 30px; margin-right: 10px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.voice-wave-bar { width: 4px; border-radius: 2px; background-color: #3b5e5b; transition-property: height; transition-duration: 240ms; transition-timing-function: ease-in-out; }
+.voice-wave-level-0 { height: 8px; }
+.voice-wave-level-1 { height: 15px; }
+.voice-wave-level-2 { height: 24px; }
+.voice-wave-level-3 { height: 12px; }
+.voice-action { position: relative; width: 52px; height: 52px; border-radius: 26px; background-color: #3b5e5b; display: flex; flex-direction: row; align-items: center; justify-content: center; transition-property: transform, background-color, opacity; transition-duration: 260ms; transition-timing-function: ease-out; }
+.voice-action-breathe-a { transform: scale(1); opacity: 1; }
+.voice-action-breathe-b { transform: scale(1.035); opacity: 0.92; }
+.voice-action-recording { background-color: #754f41; }
+.voice-action-processing { background-color: #53615f; opacity: 0.78; }
+.voice-action-ring { position: absolute; width: 64px; height: 64px; border-radius: 32px; border-width: 1px; border-style: solid; border-color: rgba(59, 94, 91, 0.24); opacity: 0; transition-property: transform, opacity; transition-duration: 520ms; transition-timing-function: ease-out; }
+.voice-action-ring-active { transform: scale(1.22); opacity: 1; }
+.voice-action-core { width: 22px; height: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.voice-mic-stem { width: 10px; height: 15px; border-radius: 6px; background-color: #ffffff; }
+.voice-mic-base { width: 16px; height: 3px; margin-top: 4px; border-radius: 2px; background-color: #ffffff; }
+.voice-stop-square { width: 14px; height: 14px; border-radius: 3px; background-color: #ffffff; }
+.voice-duration { position: absolute; right: 14px; bottom: 8px; color: #3b5e5b; font-size: 10px; line-height: 14px; font-weight: 700; }
+.voice-error { position: absolute; left: 14px; bottom: 8px; color: #93000a; font-size: 10px; line-height: 14px; }
+</style>

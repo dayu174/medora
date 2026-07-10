@@ -2,7 +2,7 @@
   <view class="app-page safe-top record-page">
     <view class="phone-frame record-phone-frame">
       <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
-        <view class="record-content">
+        <view :class="pageReady ? 'record-content motion-enter motion-enter-active' : 'record-content motion-enter'">
           <view class="record-nav">
             <view class="record-back-hit" @tap="goBack">
               <text class="record-back-icon">‹</text>
@@ -28,6 +28,8 @@
             <input class="record-input" v-model="diseaseName" placeholder="输入疾病名称..." />
           </view>
 
+          <VoiceCapture @processing="handleVoiceProcessing" @complete="handleVoiceComplete" @error="handleVoiceError" />
+
           <view class="upload-box" @tap="openUploadSheet">
             <view class="upload-camera">
               <view class="upload-camera-lens"></view>
@@ -43,10 +45,7 @@
             <text class="archive-pill" @tap="autoArchive">智能归档</text>
           </view>
 
-          <view v-if="archiveStatus.length > 0" class="archive-card">
-            <text class="archive-card-title">归档建议</text>
-            <text class="archive-card-copy">{{ archiveStatus }}</text>
-          </view>
+          <AiArchiveFlow :state="archiveState" :diseaseName="diseaseName" :department="currentDept" :voiceAttached="voiceFilePath.length > 0" />
 
           <view class="record-section note-section">
             <text class="record-label">详细笔记</text>
@@ -108,9 +107,11 @@
 
 <script lang="uts">
 import BottomTabs from '../../components/BottomTabs/BottomTabs.uvue'
+import VoiceCapture from '../../components/VoiceCapture/VoiceCapture.uvue'
+import AiArchiveFlow from '../../components/AiArchiveFlow/AiArchiveFlow.uvue'
 
 export default {
-  components: { BottomTabs },
+  components: { BottomTabs, VoiceCapture, AiArchiveFlow },
   data() {
     return {
       depts: ['内科', '外科', '儿科', '妇产科', '其他'],
@@ -121,11 +122,22 @@ export default {
       treatment: '',
       uploadStatus: '',
       archiveStatus: '',
+      archiveState: 'idle',
+      archiveTimers: [] as any,
+      voiceFilePath: '',
+      voiceDuration: 0,
       saveMessage: '',
       tagAdded: false,
       showUploadSheet: false,
-      showScanSheet: false
+      showScanSheet: false,
+      pageReady: false
     }
+  },
+  onReady() {
+    setTimeout(() => { this.pageReady = true }, 16)
+  },
+  onUnload() {
+    this.clearArchiveTimers()
   },
   methods: {
     goBack() {
@@ -165,10 +177,37 @@ export default {
       this.closeSheets()
     },
     autoArchive() {
-      const disease = this.diseaseName.length > 0 ? this.diseaseName : '未命名病例'
-      this.archiveStatus = disease + ' · ' + this.currentDept + ' · 待完善病历'
-      this.tagAdded = true
+      this.startAiArchive(false)
+    },
+    handleVoiceProcessing() {
+      this.startAiArchive(true)
+    },
+    handleVoiceComplete(payload: any) {
+      this.voiceFilePath = payload.filePath
+      this.voiceDuration = payload.duration
+      this.uploadStatus = '已附加 ' + payload.duration + ' 秒临床语音，可继续补充病例信息。'
+    },
+    handleVoiceError() {
       this.saveMessage = ''
+    },
+    startAiArchive(fromVoice: boolean) {
+      this.clearArchiveTimers()
+      this.archiveState = 'capturing'
+      this.archiveStatus = ''
+      this.saveMessage = ''
+      this.archiveTimers.push(setTimeout(() => {
+        this.archiveState = 'structuring'
+      }, fromVoice ? 420 : 320))
+      this.archiveTimers.push(setTimeout(() => {
+        const disease = this.diseaseName.length > 0 ? this.diseaseName : '未命名病例'
+        this.archiveState = 'ready'
+        this.archiveStatus = disease + ' · ' + this.currentDept + ' · 待完善病历'
+        this.tagAdded = true
+      }, fromVoice ? 1120 : 920))
+    },
+    clearArchiveTimers() {
+      for (const timer of this.archiveTimers) clearTimeout(timer)
+      this.archiveTimers = [] as any
     },
     addTag() {
       this.tagAdded = true
@@ -179,7 +218,7 @@ export default {
         this.saveMessage = '请先补充疾病名称和详细笔记，再保存记录。'
         return
       }
-      this.saveMessage = '记录已保存，可在首页最近记录中查看。'
+      this.saveMessage = this.voiceFilePath.length > 0 ? '记录已保存，临床语音已作为本次附件保留。' : '记录已保存，可在首页最近记录中查看。'
     }
   }
 }

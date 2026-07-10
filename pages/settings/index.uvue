@@ -1,6 +1,6 @@
 <template>
   <view class="app-page safe-top">
-    <view class="phone-frame">
+    <view class="phone-frame settings-phone-frame">
       <AppHeader title="设置" :back="true" />
       <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
         <view class="content settings-content">
@@ -91,8 +91,9 @@ export default {
 .logout-button { width: 128px; height: 48px; border-radius: 12px; background-color: #ffffff; color: #ba1a1a; line-height: 48px; text-align: center; font-size: 16px; font-weight: 700; }
 
 /* ===== About Modal ===== */
+.settings-phone-frame { position: relative; }
 .modal-mask {
-  position: fixed;
+  position: absolute;
   left: 0;
   right: 0;
   top: 0;
