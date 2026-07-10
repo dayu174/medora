@@ -11,7 +11,7 @@
               <SettingRow :label="item.title" :desc="item.desc" :icon="item.icon" :badge="item.badge" :toggle="item.toggle" />
             </view>
           </view>
-          <text class="delete-account">注销账号</text>
+          <text class="delete-account" @tap="confirmDelete">注销账号</text>
         </view>
       </scroll-view>
     </view>
@@ -27,6 +27,19 @@ export default {
   components: { AppHeader, SettingRow },
   data() {
     return { accountItems: accountItems }
+  },
+  methods: {
+    confirmDelete() {
+      uni.showModal({
+        title: '注销账号',
+        content: '注销后数据不可恢复，确定要注销吗？',
+        success: (res) => {
+          if (res.confirm) {
+            uni.showToast({ title: '账号注销申请已提交', icon: 'none' })
+          }
+        }
+      } as any)
+    }
   }
 }
 </script>

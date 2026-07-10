@@ -8,14 +8,27 @@
             <text class="section-title settings-title">{{ section.title }}</text>
             <view class="settings-card card">
               <view v-for="item in section.items" :key="item.label">
-                <SettingRow :label="item.label" :icon="item.icon" :path="item.path" :meta="item.meta" :toggle="item.toggle" />
+                <SettingRow :label="item.label" :icon="item.icon" :path="item.path" :meta="item.meta" :toggle="item.toggle" @action="onRowAction" />
                 <view class="divider"></view>
               </view>
             </view>
           </view>
-          <text class="logout-button">退出登录</text>
+          <text class="logout-button" @tap="confirmLogout">退出登录</text>
         </view>
       </scroll-view>
+
+      <!-- 关于弹窗 -->
+      <view v-if="showAbout" class="modal-mask" @tap="showAbout = false">
+        <view class="modal-box" @tap.stop="">
+          <text class="modal-app-name">Medora</text>
+          <text class="modal-version">版本 1.0.0</text>
+          <view class="modal-divider"></view>
+          <text class="modal-copy">专为医学生和临床医生打造的临床辅助工具</text>
+          <text class="modal-copy">© 2026 Medora Team</text>
+          <text class="modal-button" @tap="showAbout = false">确定</text>
+        </view>
+      </view>
+
       <BottomTabs active="profile" />
     </view>
   </view>
@@ -30,7 +43,42 @@ import { settingsSections } from '../../common/medora-data.uts'
 export default {
   components: { AppHeader, BottomTabs, SettingRow },
   data() {
-    return { sections: settingsSections }
+    return {
+      sections: settingsSections,
+      showAbout: false
+    }
+  },
+  methods: {
+    onRowAction(action : string) {
+      if (action == 'about') {
+        this.showAbout = true
+      } else if (action == 'cleanCache') {
+        this.cleanCache()
+      }
+    },
+    cleanCache() {
+      // 找到"清理缓存"项并更新 meta
+      for (let i = 0; i < this.sections.length; i++) {
+        let sec = this.sections[i]
+        for (let j = 0; j < sec.items.length; j++) {
+          if (sec.items[j].path == 'cleanCache') {
+            sec.items[j].meta = '0 MB'
+          }
+        }
+      }
+      uni.showToast({ title: '缓存已清理', icon: 'none' })
+    },
+    confirmLogout() {
+      uni.showModal({
+        title: '退出登录',
+        content: '确定要退出登录吗？',
+        success: (res) => {
+          if (res.confirm) {
+            uni.reLaunch({ url: '/pages/home/index' })
+          }
+        }
+      } as any)
+    }
   }
 }
 </script>
@@ -41,4 +89,64 @@ export default {
 .settings-title { margin-left: 4px; margin-bottom: 8px; }
 .settings-card { overflow: hidden; }
 .logout-button { width: 128px; height: 48px; border-radius: 12px; background-color: #ffffff; color: #ba1a1a; line-height: 48px; text-align: center; font-size: 16px; font-weight: 700; }
+
+/* ===== About Modal ===== */
+.modal-mask {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+.modal-box {
+  width: 280px;
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 32px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.modal-app-name {
+  color: #3b5e5b;
+  font-size: 28px;
+  line-height: 36px;
+  font-weight: 700;
+}
+.modal-version {
+  color: #717977;
+  font-size: 14px;
+  line-height: 20px;
+  margin-top: 4px;
+}
+.modal-divider {
+  width: 100%;
+  height: 1px;
+  background-color: #e3e2e2;
+  margin-top: 20px;
+  margin-bottom: 16px;
+}
+.modal-copy {
+  color: #414847;
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+}
+.modal-button {
+  margin-top: 20px;
+  height: 44px;
+  padding: 0 40px;
+  border-radius: 22px;
+  background-color: #3b5e5b;
+  color: #ffffff;
+  font-size: 16px;
+  line-height: 44px;
+  font-weight: 600;
+  text-align: center;
+}
 </style>

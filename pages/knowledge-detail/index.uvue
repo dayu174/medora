@@ -112,21 +112,28 @@
 </template>
 
 <script lang="uts">
-import { heartFailure } from '../../common/medora-data.uts'
+import { diseases } from '../../common/medora-data.uts'
 
 export default {
   data() {
     return {
-      data: heartFailure,
+      data: diseases.heartFailure,
       isBookmarked: false
+    }
+  },
+  onLoad(options: any) {
+    const id = options.id as string
+    if (id && id.length > 0 && (diseases as any)[id] != null) {
+      this.data = (diseases as any)[id]
     }
   },
   methods: {
     goBack() {
-      uni.navigateTo({ url: '/pages/library/index' })
+      uni.navigateBack()
     },
     toggleBookmark() {
       this.isBookmarked = !this.isBookmarked
+      uni.showToast({ title: this.isBookmarked ? '已收藏' : '已取消收藏', icon: 'none' })
     }
   }
 }

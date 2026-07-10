@@ -13,7 +13,7 @@ export default {
 
 .phone-frame {
   width: 100%;
-  height: 793px;
+  height: 800px;
   background-color: #faf9f9;
   display: flex;
   flex-direction: column;
@@ -281,8 +281,8 @@ export default {
 
 .bottom-nav {
   width: 100%;
-  height: 75px;
-  padding: 8px 44px 16px;
+  height: 82px;
+  padding: 6px 44px 20px;
   background-color: #ffffff;
   border-top-width: 1px;
   border-top-style: solid;
@@ -294,7 +294,7 @@ export default {
 
 .tab-item {
   width: 58px;
-  height: 51px;
+  height: 56px;
   color: #717977;
   display: flex;
   flex-direction: column;
@@ -323,7 +323,7 @@ export default {
 }
 
 .tab-text {
-  margin-top: 6px;
+  margin-top: 4px;
   font-size: 15px;
   line-height: 18px;
   font-weight: 700;

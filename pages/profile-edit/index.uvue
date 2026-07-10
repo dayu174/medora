@@ -19,7 +19,7 @@
           </view>
           <view class="form-field"><text class="label">所属医院</text><input class="input-box" v-model="hospital" /></view>
           <view class="form-field"><text class="label">科室</text><input class="input-box" v-model="department" /></view>
-          <text class="primary-button save-button">保存修改</text>
+          <text class="primary-button save-button" @tap="save">保存修改</text>
         </view>
       </scroll-view>
       <BottomTabs active="profile" />
@@ -35,6 +35,16 @@ export default {
   components: { AppHeader, BottomTabs },
   data() {
     return { name: '张医生', gender: '男', hospital: '第一人民医院', department: '心血管内科' }
+  },
+  methods: {
+    save() {
+      if (this.name.length == 0) {
+        uni.showToast({ title: '请输入姓名', icon: 'none' })
+        return
+      }
+      uni.showToast({ title: '保存成功', icon: 'none' })
+      uni.navigateBack()
+    }
   }
 }
 </script>

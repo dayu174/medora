@@ -32,8 +32,13 @@ export default {
   },
   methods: {
     open() {
-      if (this.path.length > 0) {
+      if (this.path.length > 0 && this.path.startsWith('/pages/')) {
         uni.navigateTo({ url: this.path })
+      } else if (this.path.length > 0) {
+        // 非标准路径，通知父组件处理（如 'about'）
+        this.$emit('action', this.path)
+      } else if (!this.toggle) {
+        uni.showToast({ title: '该功能即将上线', icon: 'none' })
       }
     }
   }

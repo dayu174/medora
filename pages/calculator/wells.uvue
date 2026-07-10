@@ -1,0 +1,456 @@
+<template>
+  <view class="app-page safe-top">
+    <view class="phone-frame">
+      <!-- Header -->
+      <view class="calc-detail-header">
+        <view class="back-hit" @tap="goBack">
+          <text class="back-icon">‹</text>
+        </view>
+        <text class="calc-detail-title">DVT 风险 (Wells)</text>
+        <view class="header-spacer"></view>
+      </view>
+
+      <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
+        <view class="content wells-content">
+          <!-- Hero Card -->
+          <view class="hero-card">
+            <view class="hero-body">
+              <text class="hero-label">Clinical Tool</text>
+              <text class="hero-title">深静脉血栓风险评估</text>
+              <text class="hero-desc">用于临床评估患者发生深静脉血栓 (DVT) 的可能性，以指导后续检查及治疗方案。</text>
+            </view>
+            <text class="hero-deco">🩺</text>
+          </view>
+
+          <!-- Inputs Section -->
+          <view class="input-section">
+            <text class="section-label">临床特征</text>
+
+            <view v-for="(item, index) in criteria" :key="item.label" class="check-card" @tap="toggleCheck(index)">
+              <view class="check-row">
+                <view class="check-box" :class="item.checked ? 'check-box-checked' : ''">
+                  <text v-if="item.checked" class="check-mark">✓</text>
+                </view>
+                <view class="check-text">
+                  <text class="check-title">{{ item.label }}</text>
+                  <text v-if="item.desc.length > 0" class="check-sub">{{ item.desc }}</text>
+                </view>
+              </view>
+              <text class="check-points">{{ item.points > 0 ? '+' + item.points : item.points }}</text>
+            </view>
+          </view>
+
+          <!-- Result Preview -->
+          <view class="result-preview">
+            <view class="preview-bar">
+              <view class="preview-fill" :style="'width: ' + (score / 9 * 100) + '%;'"></view>
+            </view>
+            <text class="preview-label">当前得分: {{ score }}</text>
+          </view>
+
+          <!-- CTA Button -->
+          <view class="cta-btn" @tap="calculate">
+            <text class="cta-icon">📊</text>
+            <text class="cta-text">评估风险</text>
+          </view>
+
+          <!-- Result Section -->
+          <view v-if="showResult" class="result-section">
+            <view class="result-card">
+              <view class="result-header">
+                <view>
+                  <text class="result-label">评估结果</text>
+                  <text class="result-status" :class="score >= 2 ? 'result-high' : 'result-low'">{{ resultTitle }}</text>
+                </view>
+                <view class="score-circle">
+                  <text class="score-num">{{ score }}</text>
+                </view>
+              </view>
+              <text class="result-desc">{{ resultText }}</text>
+              <view class="result-guide">
+                <text class="guide-icon">ℹ</text>
+                <view class="guide-body">
+                  <text class="guide-title">临床指南建议</text>
+                  <text class="guide-text">Wells 评分主要用于排除低度临床可能性的 DVT 患者。评分 ≥ 2 分表明 DVT 可能性较高，应考虑使用 D-二聚体或加压超声检查。</text>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <view style="height: 24px;"></view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+</template>
+
+<script lang="uts">
+export default {
+  data() {
+    return {
+      criteria: [
+        { label: '活动性癌症（治疗中或近 6 个月内）', desc: '', points: 1, checked: false },
+        { label: '瘫痪、轻瘫或近期下肢石膏固定', desc: '', points: 1, checked: false },
+        { label: '近期卧床 ≥ 3 天或重大手术 (4 周内)', desc: '', points: 1, checked: false },
+        { label: '沿深静脉系统分布的局部压痛', desc: '', points: 1, checked: false },
+        { label: '整个下肢肿胀', desc: '', points: 1, checked: false },
+        { label: '小腿肿胀（有症状腿）', desc: '直径较无症状腿 &gt; 3cm', points: 1, checked: false },
+        { label: '凹陷性水肿（有症状腿）', desc: '', points: 1, checked: false },
+        { label: '浅静脉侧支（非静脉曲张）', desc: '', points: 1, checked: false },
+        { label: 'DVT 病史', desc: '', points: 1, checked: false },
+        { label: '临床判断为更可能诊断为其他疾病', desc: '', points: -2, checked: false }
+      ],
+      score: 0,
+      showResult: false,
+      resultTitle: '',
+      resultText: ''
+    }
+  },
+  methods: {
+    goBack() {
+      uni.navigateBack()
+    },
+    toggleCheck(index: number) {
+      this.criteria[index].checked = !this.criteria[index].checked
+      let s = 0
+      for (let i = 0; i < this.criteria.length; i++) {
+        if (this.criteria[i].checked) s += this.criteria[i].points
+      }
+      this.score = s
+    },
+    calculate() {
+      this.showResult = true
+      if (this.score <= -2) {
+        this.resultTitle = 'DVT 不太可能'
+        this.resultText = '得分为 ' + this.score + '。DVT 可能性极低，不建议进行 D-二聚体或超声检查。建议考虑其他诊断。'
+      } else if (this.score >= 2) {
+        this.resultTitle = 'DVT 可能'
+        this.resultText = '得分为 ' + this.score + '。DVT 可能性较高，建议进一步进行 D-二聚体检测或加压超声检查以明确诊断。'
+      } else {
+        this.resultTitle = 'DVT 可能'
+        this.resultText = '得分为 ' + this.score + '。DVT 可能性中等，建议进行 D-二聚体检测；若为阳性，则进行加压超声检查。'
+      }
+    }
+  }
+}
+</script>
+
+<style scoped>
+/* ===== Design Tokens ===== */
+/* primary: #3b5e5b, primary-container: #537773, on-primary-container: #d7fef9 */
+/* surface: #faf9f9, surface-container-low: #f4f3f3, surface-container-lowest: #ffffff */
+/* on-surface: #1a1c1c, on-surface-variant: #414847, outline-variant: #c1c8c6 */
+
+/* ===== Header ===== */
+.calc-detail-header {
+  height: 64px;
+  padding: 8px 24px;
+  background-color: #faf9f9;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+.back-hit {
+  width: 36px;
+  height: 44px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+}
+.back-icon {
+  color: #3b5e5b;
+  font-size: 20px;
+  line-height: 24px;
+}
+.calc-detail-title {
+  color: #3b5e5b;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  flex: 1;
+  text-align: center;
+}
+.header-spacer {
+  width: 36px;
+}
+
+/* ===== Content ===== */
+.wells-content {
+  padding: 16px;
+}
+
+/* ===== Hero Card ===== */
+.hero-card {
+  background-color: #537773;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: row;
+  position: relative;
+  overflow: hidden;
+}
+.hero-body {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+.hero-label {
+  color: #d7fef9;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  opacity: 0.8;
+}
+.hero-title {
+  color: #d7fef9;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+.hero-desc {
+  color: #d7fef9;
+  font-size: 14px;
+  line-height: 20px;
+  opacity: 0.9;
+  margin-top: 8px;
+}
+.hero-deco {
+  position: absolute;
+  right: -16px;
+  bottom: -16px;
+  font-size: 80px;
+  opacity: 0.1;
+  color: #d7fef9;
+}
+
+/* ===== Input Section ===== */
+.input-section {
+  margin-bottom: 16px;
+}
+.section-label {
+  color: #717977;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  margin-left: 4px;
+}
+
+/* ===== Check Card ===== */
+/* flex, between, items-start, p-5(20px), bg-surface-container-lowest(#fff), rounded-xl(12px), border border-secondary/10 */
+.check-card {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: rgba(83, 97, 95, 0.1);
+  margin-bottom: 8px;
+}
+.check-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+/* Check box: w-6(24px), h-6(24px), rounded-md(6px), border-2 border-outline(#717977), mr-3(12px), flex center */
+.check-box {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border-width: 2px;
+  border-style: solid;
+  border-color: #717977;
+  margin-right: 12px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+.check-box-checked {
+  background-color: #3b5e5b;
+  border-color: #3b5e5b;
+}
+.check-mark {
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 18px;
+}
+.check-text {
+  flex: 1;
+}
+.check-title {
+  color: #1a1c1c;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.check-sub {
+  color: #414847;
+  font-size: 12px;
+  line-height: 16px;
+  margin-top: 2px;
+}
+.check-points {
+  color: #3b5e5b;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 700;
+  margin-left: 8px;
+}
+
+/* ===== Result Preview ===== */
+/* mt-6(24px), p-4(16px), bg-surface-container-low(#f4f3f3), rounded-2xl(16px) */
+.result-preview {
+  margin-top: 24px;
+  padding: 16px;
+  background-color: #f4f3f3;
+  border-radius: 16px;
+  margin-bottom: 16px;
+}
+/* bg-surface-variant(#e1e3e2), rounded-full, h-2(8px), overflow-hidden */
+.preview-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background-color: #e1e3e2;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+/* bg-primary(#3b5e5b), h-full, rounded-full, transition-all */
+.preview-fill {
+  height: 100%;
+  border-radius: 4px;
+  background-color: #3b5e5b;
+}
+/* text-center, text-primary(#3b5e5b), font-semibold, text-sm(14px) */
+.preview-label {
+  color: #3b5e5b;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ===== CTA Button ===== */
+.cta-btn {
+  width: 100%;
+  height: 56px;
+  background-color: #3b5e5b;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+.cta-icon {
+  color: #ffffff;
+  font-size: 20px;
+  line-height: 24px;
+  margin-right: 8px;
+}
+.cta-text {
+  color: #ffffff;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+/* ===== Result Section ===== */
+.result-section {
+  margin-bottom: 24px;
+}
+.result-card {
+  background-color: #f4f3f3;
+  border-radius: 16px;
+  padding: 24px;
+  border-width: 2px;
+  border-style: solid;
+  border-color: rgba(59, 94, 91, 0.2);
+}
+.result-header {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.result-label {
+  color: #3b5e5b;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+.result-status {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.result-low {
+  color: #3b5e5b;
+}
+.result-high {
+  color: #ba1a1a;
+}
+.score-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 24px;
+  background-color: #3b5e5b;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+.score-num {
+  color: #ffffff;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 700;
+}
+.result-desc {
+  color: #414847;
+  font-size: 14px;
+  line-height: 20px;
+}
+.result-guide {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-top-color: rgba(193, 200, 198, 0.3);
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+.guide-icon {
+  color: #3b5e5b;
+  font-size: 16px;
+  line-height: 20px;
+  margin-right: 8px;
+}
+.guide-body {
+  flex: 1;
+}
+.guide-title {
+  color: #3b5e5b;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.guide-text {
+  color: #414847;
+  font-size: 12px;
+  line-height: 16px;
+  margin-top: 4px;
+}
+</style>

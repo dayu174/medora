@@ -1,14 +1,14 @@
 <template>
   <view class="app-page safe-top">
     <view class="phone-frame">
-      <AppHeader title="Medora" :brand="true" :compact="true" actionIcon="/static/icons/search.png" />
+      <AppHeader title="Medora" :brand="true" :compact="true" actionIcon="/static/icons/search.png" @action="onSearch" />
       <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
         <view class="content library-main">
           <view class="tabs-row">
             <text v-for="tab in categoryTabs" :key="tab" :class="activeCategory == tab ? 'ghost-button ghost-button-active cat-tab' : 'ghost-button cat-tab'" @tap="activeCategory = tab">{{ tab }}</text>
           </view>
           <view class="article-list">
-            <view v-for="card in cards" :key="card.title" class="article-card card" @tap="go(card.path)">
+            <view v-for="card in cards" :key="card.title" class="article-card card" @tap="go('/pages/knowledge-detail/index?id=' + card.diseaseId)">
               <view class="article-head">
                 <text class="article-title">{{ card.title }}</text>
                 <text class="pill">{{ card.dept }}</text>
@@ -42,6 +42,9 @@ export default {
     }
   },
   methods: {
+    onSearch() {
+      uni.showToast({ title: '搜索功能即将上线', icon: 'none' })
+    },
     go(url) {
       uni.navigateTo({ url: url })
     }

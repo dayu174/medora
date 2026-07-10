@@ -1,45 +1,40 @@
 <template>
   <view class="app-page safe-top">
     <view class="phone-frame">
-      <AppHeader title="医学计算器" :back="true" action="..." />
+      <!-- Header: 标题居中，无右上角按钮 -->
+      <view class="calc-header">
+        <view class="back-hit" @tap="goBack">
+          <text class="back-icon">‹</text>
+        </view>
+        <text class="calc-title">医学计算器</text>
+        <view class="header-spacer"></view>
+      </view>
+
       <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
-        <view class="content calculator-content">
+        <view class="content calc-content">
+          <!-- Search -->
           <view class="search-box">
-            <text class="search-icon">搜</text>
+            <text class="search-icon">⌕</text>
             <input class="search-input" placeholder="搜索计算公式 (如 BMI, GFR)..." />
           </view>
+
+          <!-- Tabs -->
           <view class="tabs-row">
             <text v-for="tab in tabs" :key="tab" :class="activeTab == tab ? 'ghost-button ghost-button-active calc-tab' : 'ghost-button calc-tab'" @tap="activeTab = tab">{{ tab }}</text>
           </view>
+
+          <!-- Calculator List -->
           <view class="calculator-list">
-            <view v-for="item in calculators" :key="item.name" :class="item.active ? 'calculator-item calculator-item-active' : 'calculator-item'">
+            <view v-for="item in filteredCalculators" :key="item.name" :class="item.active ? 'calculator-item calculator-item-active' : 'calculator-item'" @tap="go(item.path)">
               <view class="calculator-copy">
                 <text class="calc-name">{{ item.name }}</text>
                 <text class="row-desc">{{ item.category }}</text>
               </view>
-              <text class="setting-arrow">></text>
+              <text class="setting-arrow">›</text>
             </view>
           </view>
-          <view class="bmi-card card">
-            <text class="screen-title bmi-title">身体质量指数 (BMI)</text>
-            <text class="body-text bmi-copy">用于评估体重是否处于健康范围的通用标准。</text>
-            <view class="form-field">
-              <text class="label">身高 (CM)</text>
-              <input class="input-box" type="number" v-model="height" placeholder="175" />
-            </view>
-            <view class="form-field">
-              <text class="label">体重 (KG)</text>
-              <input class="input-box" type="digit" v-model="weight" placeholder="68" />
-            </view>
-            <text class="primary-button" @tap="calculate">计算</text>
-            <view class="result-box">
-              <text class="section-title">计算结果</text>
-              <view class="result-row">
-                <text class="result-number">{{ bmi.length > 0 ? bmi : '22.2' }}</text>
-                <text class="result-unit">kg/m2</text>
-              </view>
-              <text class="result-badge">{{ status.label }} - {{ status.suggestion }}</text>
-            </view>
+          <view v-if="filteredCalculators.length == 0" class="empty-state">
+            <text class="empty-text">该分类暂无计算器</text>
           </view>
         </view>
       </scroll-view>
@@ -49,31 +44,81 @@
 </template>
 
 <script lang="uts">
-import AppHeader from '../../components/AppHeader/AppHeader.uvue'
 import BottomTabs from '../../components/BottomTabs/BottomTabs.uvue'
-import { calculators } from '../../common/medora-data.uts'
-import { calculateBmi, getBmiStatus } from '../../common/medical.uts'
 
 export default {
-  components: { AppHeader, BottomTabs },
-  data() {
-    return { calculators: calculators, tabs: ['常用', '肾脏', '儿科'], activeTab: '常用', height: '175', weight: '68', bmi: '22.2' }
-  },
+  components: { BottomTabs },
   computed: {
-    status() {
-      return getBmiStatus(this.bmi)
+    filteredCalculators(): Array<any> {
+      if (this.activeTab == '常用') {
+        return this.calculators
+      }
+      return this.calculators.filter((item: any) => item.tab == this.activeTab)
+    }
+  },
+  data() {
+    return {
+      tabs: ['常用', '肾脏', '心血管'],
+      activeTab: '常用',
+      calculators: [
+        { name: 'BMI 计算器', category: '基础评估', tab: '常用', active: false, path: '/pages/calculator/bmi' },
+        { name: 'qSOFA 筛查', category: '脓毒症筛查', tab: '常用', active: false, path: '/pages/calculator/qsofa' },
+        { name: 'Wells 评分 (DVT)', category: '深静脉血栓', tab: '心血管', active: false, path: '/pages/calculator/wells' },
+        { name: 'CrCl / eGFR', category: '肾功能评估', tab: '肾脏', active: false, path: '/pages/calculator/crcl' }
+      ]
     }
   },
   methods: {
-    calculate() {
-      this.bmi = calculateBmi(this.height, this.weight)
+    goBack() {
+      uni.navigateBack()
+    },
+    go(url: string) {
+      if (url.length > 0) {
+        uni.navigateTo({ url: url })
+      }
     }
   }
 }
 </script>
 
 <style scoped>
-.calculator-content { padding-top: 16px; }
+/* Header: flex, between, center, h-16=64px, px-24px, py-8px */
+.calc-header {
+  height: 64px;
+  padding: 8px 24px;
+  background-color: #faf9f9;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+.back-hit {
+  width: 36px;
+  height: 44px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+}
+.back-icon {
+  color: #3b5e5b;
+  font-size: 20px;
+  line-height: 24px;
+}
+/* Title: headline-md, 24px/32px, 600, text-primary, 居中 */
+.calc-title {
+  color: #3b5e5b;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  flex: 1;
+  text-align: center;
+}
+.header-spacer {
+  width: 36px;
+}
+
+.calc-content { padding-top: 16px; }
 .search-box { height: 48px; padding: 0 16px; border-radius: 24px; background-color: #f4f3f3; display: flex; flex-direction: row; align-items: center; }
 .search-icon { width: 28px; color: #717977; font-size: 14px; line-height: 24px; }
 .search-input { flex: 1; color: #1a1c1c; font-size: 14px; }
@@ -84,14 +129,8 @@ export default {
 .calculator-item-active { border-color: #3b5e5b; background-color: #eef5f3; }
 .calculator-copy { flex: 1; display: flex; flex-direction: column; }
 .calc-name { color: #1a1c1c; font-size: 16px; line-height: 22px; font-weight: 700; }
+.row-desc { color: #717977; font-size: 12px; line-height: 18px; margin-top: 2px; }
 .setting-arrow { color: #3b5e5b; font-size: 20px; line-height: 26px; }
-.bmi-card { margin-top: 24px; padding: 20px; }
-.bmi-title { font-size: 20px; line-height: 28px; }
-.bmi-copy { margin-top: 8px; margin-bottom: 24px; }
-.form-field { margin-bottom: 16px; }
-.result-box { margin-top: 24px; padding: 18px; border-radius: 12px; background-color: #eef5f3; display: flex; flex-direction: column; align-items: center; }
-.result-row { margin-top: 8px; display: flex; flex-direction: row; align-items: flex-end; }
-.result-number { color: #1a1c1c; font-size: 42px; line-height: 48px; font-weight: 700; }
-.result-unit { margin-left: 4px; color: #414847; font-size: 14px; line-height: 26px; }
-.result-badge { margin-top: 10px; color: #3b5e5b; font-size: 12px; line-height: 18px; font-weight: 700; text-align: center; }
+.empty-state { margin-top: 48px; display: flex; flex-direction: row; justify-content: center; }
+.empty-text { color: #717977; font-size: 14px; line-height: 20px; }
 </style>

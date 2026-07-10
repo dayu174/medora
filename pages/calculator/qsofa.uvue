@@ -1,0 +1,425 @@
+<template>
+  <view class="app-page safe-top">
+    <view class="phone-frame">
+      <!-- Header -->
+      <view class="calc-detail-header">
+        <view class="back-hit" @tap="goBack">
+          <text class="back-icon">‹</text>
+        </view>
+        <text class="calc-detail-title">脓毒症筛查 (qSOFA)</text>
+        <view class="header-spacer"></view>
+      </view>
+
+      <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
+        <view class="content qsofa-content">
+          <!-- Hero Card: bg-primary-container(#537773), rounded-xl(12px), p-6(24px) -->
+          <view class="hero-card">
+            <view class="hero-body">
+              <text class="hero-label">Clinical Reference</text>
+              <text class="hero-title">快速序贯器官衰竭评分</text>
+              <text class="hero-desc">用于在重症监护病房外识别疑似感染且预后不良风险较高的成年患者。</text>
+            </view>
+            <text class="hero-deco">🏥</text>
+          </view>
+
+          <!-- Inputs Section -->
+          <view class="input-section">
+            <text class="section-label">评估指标</text>
+
+            <!-- Switch Item 1 -->
+            <view class="switch-card" @tap="toggleSwitch('rr')">
+              <view class="switch-text">
+                <text class="switch-title">呼吸频率 ≥ 22次/分</text>
+                <text class="switch-sub">Respiratory Rate</text>
+              </view>
+              <view class="switch-track" :class="switches.rr ? 'switch-track-on' : ''">
+                <view class="switch-thumb" :class="switches.rr ? 'switch-thumb-on' : ''"></view>
+              </view>
+            </view>
+
+            <!-- Switch Item 2 -->
+            <view class="switch-card" @tap="toggleSwitch('gcs')">
+              <view class="switch-text">
+                <text class="switch-title">意识状态改变 (GCS &lt; 15)</text>
+                <text class="switch-sub">Altered Mentation</text>
+              </view>
+              <view class="switch-track" :class="switches.gcs ? 'switch-track-on' : ''">
+                <view class="switch-thumb" :class="switches.gcs ? 'switch-thumb-on' : ''"></view>
+              </view>
+            </view>
+
+            <!-- Switch Item 3 -->
+            <view class="switch-card" @tap="toggleSwitch('bp')">
+              <view class="switch-text">
+                <text class="switch-title">收缩压 ≤ 100 mmHg</text>
+                <text class="switch-sub">Systolic BP</text>
+              </view>
+              <view class="switch-track" :class="switches.bp ? 'switch-track-on' : ''">
+                <view class="switch-thumb" :class="switches.bp ? 'switch-thumb-on' : ''"></view>
+              </view>
+            </view>
+          </view>
+
+          <!-- CTA Button -->
+          <view class="cta-btn" @tap="calculate">
+            <text class="cta-icon">📊</text>
+            <text class="cta-text">评估风险</text>
+          </view>
+
+          <!-- Result Section -->
+          <view v-if="showResult" class="result-section">
+            <view class="result-card">
+              <view class="result-header">
+                <view>
+                  <text class="result-label">评估结果</text>
+                  <text class="result-status" :class="score >= 2 ? 'result-high' : 'result-low'">{{ score >= 2 ? '高风险提示' : '目前低风险' }}</text>
+                </view>
+                <view class="score-circle">
+                  <text class="score-num">{{ score }}</text>
+                </view>
+              </view>
+              <text class="result-desc">{{ resultText }}</text>
+              <view class="result-guide">
+                <text class="guide-icon">ℹ</text>
+                <view class="guide-body">
+                  <text class="guide-title">临床指南建议</text>
+                  <text class="guide-text">qSOFA 评分 ≥ 2 分表示感染患者住院病死率风险增加或需延长 ICU 停留时间。</text>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <!-- Spacer -->
+          <view style="height: 24px;"></view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+</template>
+
+<script lang="uts">
+export default {
+  data() {
+    return {
+      switches: { rr: false, gcs: false, bp: false },
+      score: 0,
+      showResult: false,
+      resultText: ''
+    }
+  },
+  methods: {
+    goBack() {
+      uni.navigateBack()
+    },
+    toggleSwitch(key: string) {
+      this.switches[key] = !this.switches[key]
+    },
+    calculate() {
+      let s = 0
+      if (this.switches.rr) s++
+      if (this.switches.gcs) s++
+      if (this.switches.bp) s++
+      this.score = s
+      this.showResult = true
+      if (s >= 2) {
+        this.resultText = '得分为 ' + s + '。qSOFA 评分 ≥ 2 分表示患者预后不良风险较高，建议立即评估器官功能障碍并考虑升级治疗。'
+      } else {
+        this.resultText = '得分为 ' + s + '。目前提示预后不良风险较低。请结合临床表现及病情变化动态监测。'
+      }
+    }
+  }
+}
+</script>
+
+<style scoped>
+/* ===== Design Tokens ===== */
+/* primary: #3b5e5b, primary-container: #537773, on-primary-container: #d7fef9 */
+/* surface: #faf9f9, surface-container-low: #f4f3f3, surface-container-lowest: #ffffff */
+/* on-surface: #1a1c1c, on-surface-variant: #414847, outline-variant: #c1c8c6 */
+
+/* ===== Header ===== */
+.calc-detail-header {
+  height: 64px;
+  padding: 8px 24px;
+  background-color: #faf9f9;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+.back-hit {
+  width: 36px;
+  height: 44px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+}
+.back-icon {
+  color: #3b5e5b;
+  font-size: 20px;
+  line-height: 24px;
+}
+.calc-detail-title {
+  color: #3b5e5b;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  flex: 1;
+  text-align: center;
+}
+.header-spacer {
+  width: 36px;
+}
+
+/* ===== Content ===== */
+.qsofa-content {
+  padding: 16px;
+}
+
+/* ===== Hero Card ===== */
+/* bg-primary-container(#537773), rounded-xl(12px), p-6(24px), text-on-primary-container(#d7fef9) */
+.hero-card {
+  background-color: #537773;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: row;
+  position: relative;
+  overflow: hidden;
+}
+.hero-body {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+/* label-caps: 12px/16px, 500, uppercase, tracking-widest, opacity-80 */
+.hero-label {
+  color: #d7fef9;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  opacity: 0.8;
+}
+/* headline-md: 24px/32px, 600, leading-tight */
+.hero-title {
+  color: #d7fef9;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+/* text-sm, opacity-90, leading-relaxed */
+.hero-desc {
+  color: #d7fef9;
+  font-size: 14px;
+  line-height: 20px;
+  opacity: 0.9;
+  margin-top: 8px;
+}
+/* Deco icon: absolute, right, bottom, opacity-10, text-[120px] */
+.hero-deco {
+  position: absolute;
+  right: -16px;
+  bottom: -16px;
+  font-size: 80px;
+  opacity: 0.1;
+  color: #d7fef9;
+}
+
+/* ===== Input Section ===== */
+.input-section {
+  margin-bottom: 24px;
+}
+/* Section label: label-caps, 12px/16px, 500, text-outline(#717977), px-1 */
+.section-label {
+  color: #717977;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  margin-left: 4px;
+}
+
+/* ===== Switch Card ===== */
+/* flex, between, center, p-5(20px), bg-surface-container-lowest(#fff), rounded-xl(12px), border border-secondary/10 */
+.switch-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: rgba(83, 97, 95, 0.1);
+  margin-bottom: 12px;
+}
+.switch-text {
+  display: flex;
+  flex-direction: column;
+}
+/* font-semibold, text-primary(#3b5e5b) */
+.switch-title {
+  color: #3b5e5b;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+/* text-xs, text-on-surface-variant(#414847) */
+.switch-sub {
+  color: #414847;
+  font-size: 12px;
+  line-height: 16px;
+  margin-top: 2px;
+}
+/* Switch track: w-11(44px), h-6(24px), rounded-full, bg-outline-variant(#c1c8c6) */
+.switch-track {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  background-color: #c1c8c6;
+  position: relative;
+}
+.switch-track-on {
+  background-color: #3b5e5b;
+}
+/* Switch thumb: w-4(16px), h-4(16px), rounded-full, bg-white, absolute, left-1(4px), top-1(4px) */
+.switch-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  background-color: #ffffff;
+  position: absolute;
+  left: 4px;
+  top: 4px;
+}
+.switch-thumb-on {
+  left: 24px;
+}
+
+/* ===== CTA Button ===== */
+/* w-full, py-4(16px), bg-primary(#3b5e5b), text-on-primary(#fff), rounded-xl(12px), font-semibold, shadow-lg */
+.cta-btn {
+  width: 100%;
+  height: 56px;
+  background-color: #3b5e5b;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+.cta-icon {
+  color: #ffffff;
+  font-size: 20px;
+  line-height: 24px;
+  margin-right: 8px;
+}
+.cta-text {
+  color: #ffffff;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+/* ===== Result Section ===== */
+.result-section {
+  margin-bottom: 24px;
+}
+/* bg-surface-container-low(#f4f3f3), rounded-2xl(16px), p-6(24px), border-2 border-primary/20 */
+.result-card {
+  background-color: #f4f3f3;
+  border-radius: 16px;
+  padding: 24px;
+  border-width: 2px;
+  border-style: solid;
+  border-color: rgba(59, 94, 91, 0.2);
+}
+/* Result header: flex, between, items-start, mb-4(16px) */
+.result-header {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+/* label-caps: 12px/16px, 500, text-primary(#3b5e5b) */
+.result-label {
+  color: #3b5e5b;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+/* headline-md: 24px/32px, 600 */
+.result-status {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.result-low {
+  color: #3b5e5b;
+}
+.result-high {
+  color: #ba1a1a;
+}
+/* Score circle: bg-primary(#3b5e5b), text-on-primary(#fff), w-12(48px), h-12(48px), rounded-full, flex center, text-xl(20px), font-bold(700) */
+.score-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 24px;
+  background-color: #3b5e5b;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+.score-num {
+  color: #ffffff;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 700;
+}
+/* Result desc: text-on-surface-variant(#414847), leading-relaxed, text-sm(14px) */
+.result-desc {
+  color: #414847;
+  font-size: 14px;
+  line-height: 20px;
+}
+/* Guide section: mt-6(24px), pt-4(16px), border-t border-outline-variant/30 */
+.result-guide {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-top-color: rgba(193, 200, 198, 0.3);
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+.guide-icon {
+  color: #3b5e5b;
+  font-size: 16px;
+  line-height: 20px;
+  margin-right: 8px;
+}
+.guide-body {
+  flex: 1;
+}
+.guide-title {
+  color: #3b5e5b;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.guide-text {
+  color: #414847;
+  font-size: 12px;
+  line-height: 16px;
+  margin-top: 4px;
+}
+</style>

@@ -1,0 +1,452 @@
+<template>
+  <view class="app-page safe-top">
+    <view class="phone-frame">
+      <!-- Header -->
+      <view class="calc-detail-header">
+        <view class="back-hit" @tap="goBack">
+          <text class="back-icon">‹</text>
+        </view>
+        <text class="calc-detail-title">肾功能 (CrCl/eGFR)</text>
+        <view class="header-spacer"></view>
+      </view>
+
+      <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
+        <view class="content crcl-content">
+          <!-- Hero Card -->
+          <view class="hero-card">
+            <view class="hero-body">
+              <text class="hero-label">Clinical Reference</text>
+              <text class="hero-title">Cockcroft-Gault</text>
+              <text class="hero-desc">肾功能评估。肾小球滤过率（eGFR）的简化估计公式，用于调整药物剂量和评估肾功能障碍程度。</text>
+            </view>
+            <text class="hero-deco">🫘</text>
+          </view>
+
+          <!-- Input Parameters -->
+          <view class="input-section">
+            <text class="section-label">输入参数</text>
+
+            <!-- Age Input -->
+            <view class="input-card">
+              <view class="input-row">
+                <text class="input-label">年龄</text>
+                <text class="input-unit">岁</text>
+              </view>
+              <input class="input-field" type="number" placeholder="请输入年龄 (例如 60)" v-model="age" />
+            </view>
+
+            <!-- Gender Selection -->
+            <view class="input-card">
+              <text class="input-label">性别</text>
+              <view class="gender-row">
+                <view class="gender-btn" :class="gender == 'male' ? 'gender-btn-active' : ''" @tap="gender = 'male'">
+                  <text class="gender-icon">♂</text>
+                  <text class="gender-text">男性</text>
+                </view>
+                <view class="gender-btn" :class="gender == 'female' ? 'gender-btn-active' : ''" @tap="gender = 'female'">
+                  <text class="gender-icon">♀</text>
+                  <text class="gender-text">女性</text>
+                </view>
+              </view>
+            </view>
+
+            <!-- Weight Input -->
+            <view class="input-card">
+              <view class="input-row">
+                <text class="input-label">体重</text>
+                <text class="input-unit">kg</text>
+              </view>
+              <input class="input-field" type="digit" placeholder="请输入体重 (例如 70)" v-model="weight" />
+            </view>
+
+            <!-- Serum Creatinine Input -->
+            <view class="input-card">
+              <view class="input-row">
+                <text class="input-label">血清肌酐 (Scr)</text>
+                <text class="input-unit">μmol/L</text>
+              </view>
+              <input class="input-field" type="digit" placeholder="请输入血清肌酐 (例如 88)" v-model="scr" />
+            </view>
+          </view>
+
+          <!-- CTA Button -->
+          <view class="cta-btn" @tap="calculate">
+            <text class="cta-icon">📊</text>
+            <text class="cta-text">计算评估</text>
+          </view>
+
+          <!-- Result Section -->
+          <view v-if="showResult" class="result-section">
+            <view class="result-card">
+              <view class="result-header">
+                <view>
+                  <text class="result-label">评估结果</text>
+                  <text class="result-status">{{ stageLabel }}</text>
+                </view>
+                <view class="score-circle">
+                  <text class="score-num">{{ Math.round(egfr) }}</text>
+                </view>
+              </view>
+              <text class="result-desc">{{ resultText }}</text>
+              <view class="result-guide">
+                <text class="guide-icon">ℹ</text>
+                <view class="guide-body">
+                  <text class="guide-title">临床指南建议</text>
+                  <text class="guide-text">eGFR 为估算肾小球滤过率。对于肌肉量异常、妊娠或急性肾损伤患者，估算值可能不准确，需结合临床综合判断。</text>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <view style="height: 24px;"></view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+</template>
+
+<script lang="uts">
+export default {
+  data() {
+    return {
+      age: '',
+      gender: 'male',
+      weight: '',
+      scr: '',
+      egfr: 0,
+      showResult: false,
+      stageLabel: '',
+      resultText: ''
+    }
+  },
+  methods: {
+    goBack() {
+      uni.navigateBack()
+    },
+    calculate() {
+      const a = parseFloat(this.age)
+      const w = parseFloat(this.weight)
+      const s = parseFloat(this.scr)
+      if (isNaN(a) || isNaN(w) || isNaN(s) || a <= 0 || w <= 0 || s <= 0) {
+        uni.showToast({ title: '请输入有效数值', icon: 'none' })
+        return
+      }
+      // Cockcroft-Gault: ((140 - age) * weight) / (72 * Scr) [for male]
+      let e = ((140 - a) * w) / (72 * s)
+      if (this.gender == 'female') e = e * 0.85
+      this.egfr = e
+      this.showResult = true
+      if (e >= 90) {
+        this.stageLabel = 'G1: 正常或高'
+        this.resultText = '估算肾小球滤过率 (eGFR) 约为 ' + Math.round(e) + ' mL/min。提示肾功能正常。'
+      } else if (e >= 60) {
+        this.stageLabel = 'G2: 轻度下降'
+        this.resultText = '估算肾小球滤过率 (eGFR) 约为 ' + Math.round(e) + ' mL/min。提示轻度肾功能减退。'
+      } else if (e >= 30) {
+        this.stageLabel = 'G3a-G3b: 中度下降'
+        this.resultText = '估算肾小球滤过率 (eGFR) 约为 ' + Math.round(e) + ' mL/min。提示中度肾功能减退，建议肾内科随访。'
+      } else if (e >= 15) {
+        this.stageLabel = 'G4: 重度下降'
+        this.resultText = '估算肾小球滤过率 (eGFR) 约为 ' + Math.round(e) + ' mL/min。提示重度肾功能减退，建议肾内科积极干预。'
+      } else {
+        this.stageLabel = 'G5: 肾衰竭'
+        this.resultText = '估算肾小球滤过率 (eGFR) 约为 ' + Math.round(e) + ' mL/min。提示肾衰竭，可能需要肾脏替代治疗。'
+      }
+    }
+  }
+}
+</script>
+
+<style scoped>
+/* ===== Design Tokens ===== */
+/* primary: #3b5e5b, primary-container: #537773, on-primary-container: #d7fef9 */
+/* surface: #faf9f9, surface-container-low: #f4f3f3, surface-container-lowest: #ffffff */
+/* on-surface: #1a1c1c, on-surface-variant: #414847, outline-variant: #c1c8c6 */
+
+/* ===== Header ===== */
+.calc-detail-header {
+  height: 64px;
+  padding: 8px 24px;
+  background-color: #faf9f9;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+.back-hit {
+  width: 36px;
+  height: 44px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+}
+.back-icon {
+  color: #3b5e5b;
+  font-size: 20px;
+  line-height: 24px;
+}
+.calc-detail-title {
+  color: #3b5e5b;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  flex: 1;
+  text-align: center;
+}
+.header-spacer {
+  width: 36px;
+}
+
+/* ===== Content ===== */
+.crcl-content {
+  padding: 16px;
+}
+
+/* ===== Hero Card ===== */
+.hero-card {
+  background-color: #537773;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: row;
+  position: relative;
+  overflow: hidden;
+}
+.hero-body {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+.hero-label {
+  color: #d7fef9;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  opacity: 0.8;
+}
+.hero-title {
+  color: #d7fef9;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+.hero-desc {
+  color: #d7fef9;
+  font-size: 14px;
+  line-height: 20px;
+  opacity: 0.9;
+  margin-top: 8px;
+}
+.hero-deco {
+  position: absolute;
+  right: -16px;
+  bottom: -16px;
+  font-size: 80px;
+  opacity: 0.1;
+  color: #d7fef9;
+}
+
+/* ===== Input Section ===== */
+.input-section {
+  margin-bottom: 24px;
+}
+.section-label {
+  color: #717977;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  margin-bottom: 16px;
+  margin-left: 4px;
+}
+
+/* ===== Input Card ===== */
+/* p-5(20px), bg-surface-container-lowest(#fff), rounded-xl(12px), border border-secondary/10 */
+.input-card {
+  padding: 16px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: rgba(83, 97, 95, 0.1);
+  margin-bottom: 12px;
+}
+/* Input row: flex, between, center, mb-2(8px) */
+.input-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+/* font-semibold, text-primary(#3b5e5b) */
+.input-label {
+  color: #3b5e5b;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+/* text-on-surface-variant(#414847), text-sm(14px) */
+.input-unit {
+  color: #414847;
+  font-size: 14px;
+  line-height: 20px;
+}
+/* w-full, h-12(48px), bg-surface-container-low(#f4f3f3), rounded-lg(8px), px-4(16px), text-on-surface(#1a1c1c), placeholder outline-variant(#c1c8c6) */
+.input-field {
+  width: 100%;
+  height: 48px;
+  background-color: #f4f3f3;
+  border-radius: 8px;
+  padding: 0 16px;
+  color: #1a1c1c;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+/* ===== Gender Selection ===== */
+/* flex, gap-2(8px), mt-2(8px) */
+.gender-row {
+  display: flex;
+  flex-direction: row;
+  margin-top: 8px;
+}
+.gender-btn {
+  flex: 1;
+  height: 48px;
+  background-color: #f4f3f3;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+.gender-btn:first-child {
+  margin-right: 8px;
+}
+.gender-btn-active {
+  background-color: #3b5e5b;
+}
+.gender-icon {
+  font-size: 18px;
+  line-height: 24px;
+  margin-right: 8px;
+}
+.gender-text {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+/* ===== CTA Button ===== */
+.cta-btn {
+  width: 100%;
+  height: 56px;
+  background-color: #3b5e5b;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+.cta-icon {
+  color: #ffffff;
+  font-size: 20px;
+  line-height: 24px;
+  margin-right: 8px;
+}
+.cta-text {
+  color: #ffffff;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+/* ===== Result Section ===== */
+.result-section {
+  margin-bottom: 24px;
+}
+.result-card {
+  background-color: #f4f3f3;
+  border-radius: 16px;
+  padding: 24px;
+  border-width: 2px;
+  border-style: solid;
+  border-color: rgba(59, 94, 91, 0.2);
+}
+.result-header {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.result-label {
+  color: #3b5e5b;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+}
+.result-status {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  margin-top: 4px;
+  color: #3b5e5b;
+}
+.score-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 24px;
+  background-color: #3b5e5b;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+.score-num {
+  color: #ffffff;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 700;
+}
+.result-desc {
+  color: #414847;
+  font-size: 14px;
+  line-height: 20px;
+}
+.result-guide {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-top-color: rgba(193, 200, 198, 0.3);
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}
+.guide-icon {
+  color: #3b5e5b;
+  font-size: 16px;
+  line-height: 20px;
+  margin-right: 8px;
+}
+.guide-body {
+  flex: 1;
+}
+.guide-title {
+  color: #3b5e5b;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.guide-text {
+  color: #414847;
+  font-size: 12px;
+  line-height: 16px;
+  margin-top: 4px;
+}
+</style>

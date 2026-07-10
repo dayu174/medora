@@ -33,19 +33,22 @@ export const records = [
     no: '病例 #1042',
     title: '急性阑尾炎',
     summary: '患者表现为右下腹痛、发热和恶心。麦氏点反跳痛阳性，等待超声确认。',
-    tags: ['外科', '急性']
+    tags: ['外科', '急性'],
+    diseaseId: 'acuteAppendicitis'
   },
   {
     no: '病例 #1041',
     title: '社区获得性肺炎',
     summary: '排痰性咳嗽、胸膜炎性胸痛和发热3天。胸部X线显示右下叶实变。',
-    tags: ['内科', '感染']
+    tags: ['内科', '感染'],
+    diseaseId: 'communityAcquiredPneumonia'
   },
   {
     no: '今天',
     title: '高血压急症',
     summary: '血压显著升高伴头痛，需排查靶器官损害并记录降压方案。',
-    tags: ['心血管', '急诊']
+    tags: ['心血管', '急诊'],
+    diseaseId: 'hypertensiveEmergency'
   }
 ]
 
@@ -55,79 +58,231 @@ export const knowledgeCards = [
     dept: '内科',
     summary: '常见心律失常。评估血栓风险、心室率控制及抗凝适应证。',
     reviewed: '上次复习：2天前',
-    path: '/pages/knowledge-detail/index'
+    diseaseId: 'atrialFibrillation'
   },
   {
     title: '急性阑尾炎',
     dept: '外科',
     summary: '右下腹痛、发热、恶心和局部腹膜刺激征。影像辅助确认。',
     reviewed: '上次复习：1周前',
-    path: '/pages/knowledge-detail/index'
+    diseaseId: 'acuteAppendicitis'
   },
   {
     title: 'ACE抑制剂',
     dept: '药理',
     summary: '降压、心衰和肾保护常用药。注意咳嗽、高钾和肾功能变化。',
     reviewed: '上次复习：3周前',
-    path: '/pages/knowledge-detail/index'
+    diseaseId: 'aceInhibitors'
   },
   {
     title: '法洛四联症',
     dept: '儿科',
     summary: '发绀型先天性心脏病，关注缺氧发作和外科矫治时机。',
     reviewed: '上次复习：2周前',
-    path: '/pages/knowledge-detail/index'
+    diseaseId: 'tetralogyOfFallot'
   }
 ]
 
-export const heartFailure = {
-  title: '心力衰竭',
-  dept: '心内科',
-  category: '慢性病',
-  intro: '一种复杂的临床综合征，由任何导致心室充盈或射血功能受损的结构或功能异常引起。它代表了许多心脏疾病的终末阶段。',
-  tags: ['心内科', '慢性病'],
-  symptomGroups: [
-    {
-      title: '左心衰竭',
-      items: ['劳力性呼吸困难 (DOE)', '端坐呼吸', '阵发性夜间呼吸困难', '疲劳和无力']
-    },
-    {
-      title: '右心衰竭',
-      items: ['外周水肿（凹陷性）', '颈静脉怒张 (JVD)', '肝大（常伴触痛）', '腹水']
-    }
-  ],
-  diagnostics: [
-    {
-      title: '超声心动图 (TTE)',
-      body: '首选检查。评估LVEF、心腔大小。鉴别HFrEF（≤40%）和HFpEF（≥50%）。'
-    },
-    {
-      title: '生物标志物',
-      body: 'BNP/NT-proBNP：升高支持诊断，正常基本排除。'
-    },
-    {
-      title: '心电图 (ECG)',
-      body: '极少正常。寻找心梗(Q波)、LVH或心律失常(房颤/LBBB)。'
-    },
-    {
-      title: '胸部X线',
-      body: '心脏扩大、肺静脉高压、间质性水肿(Kerley B线)、肺泡性水肿和胸腔积液。'
-    }
-  ],
-  treatments: {
-    subtitle: 'HFREF 核心药物 (GDMT)',
-    coreDrugs: [
-      { name: 'ARNI/ACEi/ARB', desc: '首选沙库巴曲缬沙坦' },
-      { name: 'β受体阻滞剂', desc: '美托洛尔/比索洛尔等' },
-      { name: 'MRA', desc: '螺内酯，监测血钾' },
-      { name: 'SGLT2 抑制剂', desc: '达格列净/恩格列净' }
+/* ===== 疾病知识库 ===== */
+export const diseases = {
+  heartFailure: {
+    title: '心力衰竭',
+    dept: '心内科',
+    category: '慢性病',
+    intro: '一种复杂的临床综合征，由任何导致心室充盈或射血功能受损的结构或功能异常引起。它代表了许多心脏疾病的终末阶段。',
+    tags: ['心内科', '慢性病'],
+    symptomGroups: [
+      { title: '左心衰竭', items: ['劳力性呼吸困难 (DOE)', '端坐呼吸', '阵发性夜间呼吸困难', '疲劳和无力'] },
+      { title: '右心衰竭', items: ['外周水肿（凹陷性）', '颈静脉怒张 (JVD)', '肝大（常伴触痛）', '腹水'] }
     ],
-    symptomManagement: {
-      title: '利尿剂（袢利尿剂）',
-      desc: '呋塞米/托拉塞米。缓解液体潴留和充血，依症状调量。'
+    diagnostics: [
+      { title: '超声心动图 (TTE)', body: '首选检查。评估LVEF、心腔大小。鉴别HFrEF（≤40%）和HFpEF（≥50%）。' },
+      { title: '生物标志物', body: 'BNP/NT-proBNP：升高支持诊断，正常基本排除。' },
+      { title: '心电图 (ECG)', body: '极少正常。寻找心梗(Q波)、LVH或心律失常(房颤/LBBB)。' },
+      { title: '胸部X线', body: '心脏扩大、肺静脉高压、间质性水肿(Kerley B线)、肺泡性水肿和胸腔积液。' }
+    ],
+    treatments: {
+      subtitle: 'HFREF 核心药物 (GDMT)',
+      coreDrugs: [
+        { name: 'ARNI/ACEi/ARB', desc: '首选沙库巴曲缬沙坦' },
+        { name: 'β受体阻滞剂', desc: '美托洛尔/比索洛尔等' },
+        { name: 'MRA', desc: '螺内酯，监测血钾' },
+        { name: 'SGLT2 抑制剂', desc: '达格列净/恩格列净' }
+      ],
+      symptomManagement: { title: '利尿剂（袢利尿剂）', desc: '呋塞米/托拉塞米。缓解液体潴留和充血，依症状调量。' }
+    }
+  },
+
+  atrialFibrillation: {
+    title: '心房颤动',
+    dept: '心内科',
+    category: '心律失常',
+    intro: '最常见的心律失常之一，心房失去有效收缩，代之以快速无序的颤动波。主要风险为血栓栓塞和心功能下降。',
+    tags: ['心内科', '心律失常'],
+    symptomGroups: [
+      { title: '常见症状', items: ['心悸或心跳不规则', '乏力、运动耐量下降', '胸闷或气短', '头晕或晕厥前兆'] },
+      { title: '血栓栓塞风险', items: ['缺血性脑卒中', '短暂性脑缺血发作(TIA)', '外周动脉栓塞'] }
+    ],
+    diagnostics: [
+      { title: '心电图 (ECG)', body: '确诊金标准。P波消失，代之以f波，RR间期绝对不规则。' },
+      { title: 'CHA2DS2-VASc评分', body: '评估卒中风险：≥2分（男）或≥3分（女）建议口服抗凝。' },
+      { title: '超声心动图', body: '评估左心房大小、左室功能及瓣膜病变。' },
+      { title: '甲状腺功能', body: '甲亢是房颤常见诱因，需常规筛查。' }
+    ],
+    treatments: {
+      subtitle: '节律控制与心率控制',
+      coreDrugs: [
+        { name: '抗凝药物', desc: '华法林/NOAC（达比加群/利伐沙班）' },
+        { name: 'β受体阻滞剂', desc: '控制心室率首选' },
+        { name: '胺碘酮', desc: '药物复律及维持窦律' },
+        { name: '导管消融术', desc: '症状明显且药物无效时考虑' }
+      ],
+      symptomManagement: { title: '生活方式干预', desc: '限酒、减重、控制血压和睡眠呼吸暂停。' }
+    }
+  },
+
+  acuteAppendicitis: {
+    title: '急性阑尾炎',
+    dept: '普外科',
+    category: '急腹症',
+    intro: '最常见的外科急腹症，由阑尾腔阻塞后继发细菌感染引起。延误诊治可导致穿孔、腹膜炎等严重并发症。',
+    tags: ['普外科', '急腹症'],
+    symptomGroups: [
+      { title: '典型表现', items: ['转移性右下腹痛', '恶心、呕吐', '低热（37.5-38.5°C）', '食欲减退'] },
+      { title: '体征', items: ['麦氏点压痛及反跳痛', '罗氏征阳性', '腰大肌试验阳性', '发热伴心动过速'] }
+    ],
+    diagnostics: [
+      { title: '腹部超声', body: '首选无创检查。可见阑尾增粗（>6mm）、壁增厚、周围积液。' },
+      { title: '腹部CT', body: '诊断准确性最高。阑尾增粗、壁强化、周围脂肪条索影。' },
+      { title: '实验室检查', body: '白细胞升高伴中性粒细胞左移，CRP升高。' },
+      { title: 'Alvarado评分', body: '≥7分提示阑尾炎可能大，≥9分高度怀疑。' }
+    ],
+    treatments: {
+      subtitle: '手术治疗为主',
+      coreDrugs: [
+        { name: '阑尾切除术', desc: '腹腔镜微创手术为金标准' },
+        { name: '开腹阑尾切除', desc: '穿孔或弥漫性腹膜炎时选用' },
+        { name: '抗生素治疗', desc: '单纯性可尝试保守，复发率高' },
+        { name: '围术期抗生素', desc: '覆盖肠道革兰阴性菌及厌氧菌' }
+      ],
+      symptomManagement: { title: '对症支持', desc: '禁食、补液、镇痛，密切观察病情变化。' }
+    }
+  },
+
+  aceInhibitors: {
+    title: 'ACE抑制剂',
+    dept: '临床药理',
+    category: '心血管药物',
+    intro: '血管紧张素转换酶抑制剂，通过抑制血管紧张素II生成发挥降压、心脏保护和肾保护作用。是多种心血管疾病的基础用药。',
+    tags: ['临床药理', '心血管'],
+    symptomGroups: [
+      { title: '适应证', items: ['高血压', '慢性心力衰竭（HFrEF）', '心肌梗死后心室重构', '糖尿病肾病蛋白尿'] },
+      { title: '禁忌证与慎用', items: ['妊娠', '双侧肾动脉狭窄', '血管性水肿病史', '严重高钾血症'] }
+    ],
+    diagnostics: [
+      { title: '血压监测', body: '起始治疗及剂量调整期间需密切监测，避免首剂低血压。' },
+      { title: '肾功能与血钾', body: '用药后1-2周复查Scr和K+，升高>30%需评估肾动脉狭窄。' },
+      { title: '咳嗽评估', body: '干咳为常见不良反应（5-20%），与缓激肽蓄积有关。' },
+      { title: '血管性水肿筛查', body: '罕见但严重，有家族史或既往史者禁用。' }
+    ],
+    treatments: {
+      subtitle: '常用药物与剂量',
+      coreDrugs: [
+        { name: '依那普利', desc: '起始2.5-5mg/d，目标10-20mg/d' },
+        { name: '贝那普利', desc: '起始5-10mg/d，目标20-40mg/d' },
+        { name: '培哚普利', desc: '起始2mg/d，目标4-8mg/d' },
+        { name: '雷米普利', desc: '起始1.25-2.5mg/d，目标5-10mg/d' }
+      ],
+      symptomManagement: { title: '不良反应管理', desc: '干咳不耐受可换用ARB；高钾可联用排钾利尿剂。' }
+    }
+  },
+
+  tetralogyOfFallot: {
+    title: '法洛四联症',
+    dept: '小儿心外科',
+    category: '先天性心脏病',
+    intro: '最常见的发绀型先天性心脏病，由四种畸形组成：室间隔缺损、肺动脉狭窄、主动脉骑跨和右心室肥厚。需外科矫治。',
+    tags: ['小儿心外科', '先心病'],
+    symptomGroups: [
+      { title: '临床表现', items: ['发绀（口唇、指端明显）', '蹲踞现象', '缺氧发作（阵发性呼吸困难）', '生长发育迟缓'] },
+      { title: '体征', items: ['胸骨左缘收缩期杂音', '第二心音单一（肺动脉成分弱）', '杵状指（趾）', '红细胞增多症'] }
+    ],
+    diagnostics: [
+      { title: '超声心动图', body: '首选确诊检查。可清晰显示四种畸形的解剖结构及严重程度。' },
+      { title: '心导管检查', body: '评估肺动脉发育、冠状动脉走行及侧支循环。' },
+      { title: '胸部X线', body: '"靴形心"——心尖上翘、肺动脉段凹陷、肺血减少。' },
+      { title: '血常规', body: '血红蛋白和红细胞压积升高，提示慢性缺氧代偿。' }
+    ],
+    treatments: {
+      subtitle: '外科手术矫治',
+      coreDrugs: [
+        { name: '一期根治术', desc: '闭合VSD+解除右室流出道梗阻，2岁内为宜' },
+        { name: '体肺分流术', desc: '肺动脉发育差时先行姑息，促进肺动脉生长' },
+        { name: '缺氧发作处理', desc: '膝胸位、吸氧、吗啡、补液及普萘洛尔' },
+        { name: '长期随访', desc: '残余肺动脉反流、心律失常及右心功能监测' }
+      ],
+      symptomManagement: { title: '围术期管理', desc: '纠正脱水、预防感染、铁剂补充改善携氧能力。' }
+    }
+  },
+
+  communityAcquiredPneumonia: {
+    title: '社区获得性肺炎',
+    dept: '呼吸内科',
+    category: '感染性疾病',
+    intro: '在医院外环境中罹患的感染性肺实质炎症。常见病原体为肺炎链球菌、流感嗜血杆菌和非典型病原体（支原体、衣原体、军团菌）。',
+    tags: ['呼吸内科', '感染'],
+    symptomGroups: [
+      { title: '典型表现', items: ['急性发热伴寒战', '咳嗽伴脓痰或铁锈色痰', '胸膜炎性胸痛', '呼吸急促与气促'] },
+      { title: '重症征象', items: ['呼吸频率≥30次/分', '收缩压<90mmHg', '意识障碍', '多肺叶受累或PaO2/FiO2<250'] }
+    ],
+    diagnostics: [
+      { title: '胸部X线', body: '确诊必备。可见肺叶或段实变、浸润影或间质性改变。' },
+      { title: 'CURB-65评分', body: '≥2分建议住院，≥3分建议ICU。评估意识、BUN、呼吸、血压、年龄。' },
+      { title: '病原学检查', body: '痰培养+药敏、血培养、肺炎链球菌尿抗原、军团菌尿抗原。' },
+      { title: '血气分析', body: '评估氧合状态，PaO2<60mmHg或PaCO2>50mmHg提示呼吸衰竭。' }
+    ],
+    treatments: {
+      subtitle: '经验性抗感染治疗',
+      coreDrugs: [
+        { name: 'β-内酰胺类', desc: '阿莫西林/头孢曲松，覆盖肺炎链球菌' },
+        { name: '大环内酯类', desc: '阿奇霉素，覆盖非典型病原体' },
+        { name: '呼吸喹诺酮', desc: '左氧氟沙星/莫西沙星，单药方案' },
+        { name: '抗病毒治疗', desc: '流感季考虑奥司他韦，确诊后48h内启动' }
+      ],
+      symptomManagement: { title: '支持治疗', desc: '氧疗维持SpO2>94%、补液、退热、祛痰及体位引流。' }
+    }
+  },
+
+  hypertensiveEmergency: {
+    title: '高血压急症',
+    dept: '急诊科',
+    category: '心血管急症',
+    intro: '血压急剧升高（通常收缩压>180mmHg和/或舒张压>120mmHg）并伴有进行性靶器官损害。需在数分钟至数小时内控制血压，防止不可逆损伤。',
+    tags: ['急诊科', '心血管急症'],
+    symptomGroups: [
+      { title: '靶器官损害表现', items: ['高血压脑病（头痛、意识障碍、抽搐）', '急性左心衰（肺水肿）', '急性冠脉综合征', '急性肾功能衰竭'] },
+      { title: '伴随症状', items: ['剧烈头痛、视物模糊', '恶心呕吐', '胸痛、呼吸困难', '少尿或无尿'] }
+    ],
+    diagnostics: [
+      { title: '血压监测', body: '双侧上肢血压对比，排除主动脉夹层。明确高血压急症 vs 亚急症。' },
+      { title: '靶器官评估', body: '头颅CT（排除出血/梗死）、心电图+肌钙蛋白、肾功能+电解质、胸片。' },
+      { title: '继发性高血压筛查', body: '肾动脉超声、尿儿茶酚胺、醛固酮/肾素比值（病情稳定后）。' },
+      { title: '眼底检查', body: '高血压视网膜病变分级：I级动脉变细 → IV级视乳头水肿。' }
+    ],
+    treatments: {
+      subtitle: '静脉降压药物',
+      coreDrugs: [
+        { name: '硝普钠', desc: '0.25-10μg/kg/min，起效快，需避光，注意氰化物中毒' },
+        { name: '乌拉地尔', desc: '25-50mg静注后持续泵入，中枢+外周双重降压' },
+        { name: '尼卡地平', desc: '5-15mg/h静滴，脑血管扩张，适用于合并卒中者' },
+        { name: '艾司洛尔', desc: '50-300μg/kg/min，超短效β阻滞剂，适用于主动脉夹层' }
+      ],
+      symptomManagement: { title: '降压原则', desc: '第1小时降压幅度不超过治疗前水平的25%，避免器官低灌注。' }
     }
   }
 }
+
+export const heartFailure = diseases.heartFailure
 
 export const calculators = [
   { name: '身体质量指数 (BMI)', category: '身高、体重', active: true },
@@ -148,7 +303,7 @@ export const settingsSections = [
     title: '系统',
     items: [
       { label: '深色模式', icon: '夜', path: '', meta: '', toggle: true },
-      { label: '清理缓存', icon: '清', path: '', meta: '24 MB', toggle: false }
+      { label: '清理缓存', icon: '清', path: 'cleanCache', meta: '24 MB', toggle: false }
     ]
   },
   {
@@ -160,7 +315,7 @@ export const settingsSections = [
   {
     title: '关于',
     items: [
-      { label: '关于Medora', icon: 'i', path: '', meta: '1.0.0', toggle: false }
+      { label: '关于Medora', icon: 'i', path: 'about', meta: '1.0.0', toggle: false }
     ]
   }
 ]

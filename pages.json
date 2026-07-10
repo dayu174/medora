@@ -17,7 +17,7 @@
     {
       "path": "pages/knowledge-detail/index",
       "style": {
-        "navigationBarTitleText": "心力衰竭",
+        "navigationBarTitleText": "",
         "navigationStyle": "custom"
       }
     },
@@ -32,6 +32,34 @@
       "path": "pages/calculator/index",
       "style": {
         "navigationBarTitleText": "医学计算器",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/calculator/qsofa",
+      "style": {
+        "navigationBarTitleText": "qSOFA 筛查",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/calculator/wells",
+      "style": {
+        "navigationBarTitleText": "Wells 评分",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/calculator/crcl",
+      "style": {
+        "navigationBarTitleText": "CrCl / eGFR",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/calculator/bmi",
+      "style": {
+        "navigationBarTitleText": "BMI 计算器",
         "navigationStyle": "custom"
       }
     },

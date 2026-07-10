@@ -25,7 +25,7 @@
             <!-- 计算器: bg-surface-container-low(#f3f4f3), rounded-xl(12px), p-16px, border outline-variant/30 -->
             <view class="quick-btn quick-calc" @tap="go('/pages/calculator/index')">
               <view class="quick-icon-box">
-                <text class="quick-icon quick-icon-calc">⊞</text>
+                <image class="quick-icon-img" src="/static/icons/calculator.png" mode="aspectFit"></image>
               </view>
               <text class="quick-label quick-label-calc">计算器</text>
             </view>
@@ -40,14 +40,13 @@
             </view>
             <!-- Record list -->
             <view class="record-list">
-              <view v-for="(record, index) in records" :key="record.no" class="record-card" :style="record.draft ? 'opacity: 0.75;' : ''">
+              <view v-for="(record, index) in records" :key="record.no" class="record-card" :style="record.draft ? 'opacity: 0.75;' : ''" @tap="goDetail(index)">
                 <!-- Top row: flex, between, items-start -->
                 <view class="record-top">
                   <view class="record-top-left">
                     <text class="record-no">{{ record.no }}</text>
                     <text class="record-name" :style="record.draft ? 'font-style: italic;' : ''">{{ record.title }}</text>
                   </view>
-                  <text class="record-more">⋯</text>
                 </view>
                 <!-- Description -->
                 <text class="record-desc">{{ record.summary }}</text>
@@ -80,6 +79,12 @@ export default {
   methods: {
     go(url: string) {
       uni.navigateTo({ url: url })
+    },
+    goDetail(index: number) {
+      const record = this.records[index]
+      if (record != null && (record as any).diseaseId != null) {
+        uni.navigateTo({ url: '/pages/knowledge-detail/index?id=' + (record as any).diseaseId })
+      }
     }
   }
 }
@@ -200,6 +205,10 @@ export default {
 }
 .quick-icon-record {
   color: #ffffff;
+}
+.quick-icon-img {
+  width: 28px;
+  height: 28px;
 }
 .quick-icon-calc {
   color: #334b46;
