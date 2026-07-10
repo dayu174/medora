@@ -1,605 +1,431 @@
 <template>
-  <view class="app-page safe-top record-page">
-    <view class="phone-frame record-phone-frame">
+  <view class="app-page safe-top">
+    <view class="phone-frame">
+      <!-- Header: fixed at top, not scrolling -->
+      <view class="r-header">
+        <view class="back-hit" @tap="goBack">
+          <text class="back-icon">‹</text>
+        </view>
+        <text class="r-title">新建记录</text>
+        <view class="r-header-right">
+          <text class="r-hint">保存后进入待整理</text>
+          <view class="r-save-btn" @tap="saveRecord">
+            <text class="r-save-label">保存</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- Scrollable content area -->
       <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
-        <view :class="pageReady ? 'record-content motion-enter motion-enter-active' : 'record-content motion-enter'">
-          <view class="record-nav">
-            <view class="record-back-hit" @tap="goBack">
-              <text class="record-back-icon">‹</text>
+        <view class="r-main">
+          <!-- Input Card -->
+          <view class="input-card">
+            <textarea
+              class="input-ta"
+              v-model="draftContent"
+              placeholder="记录这个临床瞬间……"
+            />
+            <text v-if="draftContent.length === 0" class="input-sub-placeholder">
+              例如：王老师查房时强调：慢性阻塞性肺疾病患者氧疗目标为维持PaO2≥60mmHg或SpO2≥90%，同时需警惕CO2潴留加重。
+            </text>
+          </view>
+
+          <!-- Action Buttons: 语音 / 图片 / 智能归档 -->
+          <view class="action-row">
+            <view class="act-btn" @tap="onVoice">
+              <text class="act-icon">♪</text>
+              <text class="act-label">语音</text>
+            </view>
+            <view class="act-btn" @tap="onImage">
+              <text class="act-icon">◇</text>
+              <text class="act-label">图片</text>
+            </view>
+            <view class="act-btn act-smart" @tap="onSmartArchive">
+              <text class="act-icon">✦</text>
+              <text class="act-label">智能归档</text>
             </view>
           </view>
 
-          <view class="record-hero">
-            <text class="record-title">记录发现</text>
-            <text class="record-subtitle">采集数据并添加临床笔记。</text>
-          </view>
-
-          <view class="record-section">
-            <text class="record-label">科室选择</text>
-            <scroll-view class="dept-scroll" scroll-x="true" :show-scrollbar="false">
-              <view class="dept-row">
-                <text v-for="dept in depts" :key="dept" :class="currentDept == dept ? 'dept-chip dept-chip-active' : 'dept-chip'" @tap="selectDept(dept)">{{ dept }}</text>
+          <!-- Pending Drafts Section: only shown when there are drafts -->
+          <view v-if="pendingDrafts.length > 0" class="pending-section">
+            <view class="pending-head">
+              <view class="ph-left">
+                <text class="ph-icon">⊞</text>
+                <text class="ph-title">待整理</text>
               </view>
-            </scroll-view>
-          </view>
-
-          <view class="record-section">
-            <text class="record-label">疾病名称</text>
-            <input class="record-input" v-model="diseaseName" placeholder="输入疾病名称..." />
-          </view>
-
-          <VoiceCapture @processing="handleVoiceProcessing" @complete="handleVoiceComplete" @error="handleVoiceError" />
-
-          <view class="upload-box" @tap="openUploadSheet">
-            <view class="upload-camera">
-              <view class="upload-camera-lens"></view>
+              <text class="view-all" @tap="onViewAll">查看全部</text>
             </view>
-            <text class="upload-copy">点击拍摄或上传</text>
-          </view>
-          <text v-if="uploadStatus.length > 0" class="feedback-line">{{ uploadStatus }}</text>
 
-          <view class="record-divider"></view>
-
-          <view class="note-head">
-            <text class="note-title">临床笔记</text>
-            <text class="archive-pill" @tap="autoArchive">智能归档</text>
-          </view>
-
-          <AiArchiveFlow :state="archiveState" :diseaseName="diseaseName" :department="currentDept" :voiceAttached="voiceFilePath.length > 0" />
-
-          <view class="record-section note-section">
-            <text class="record-label">详细笔记</text>
-            <textarea class="detail-textarea" v-model="note" placeholder="在此输入详细临床笔记..." />
-          </view>
-
-          <view class="two-grid">
-            <view class="mini-field mini-field-left">
-              <text class="record-label">症状</text>
-              <textarea class="mini-textarea" v-model="symptoms" placeholder="描述症状..." />
-            </view>
-            <view class="mini-field">
-              <text class="record-label">用药/方案</text>
-              <textarea class="mini-textarea" v-model="treatment" placeholder="记录方案..." />
+            <view class="pending-list">
+              <view v-for="(draft, idx) in pendingDrafts" :key="draft.id" class="pending-card">
+                <view class="pc-top">
+                  <view class="pc-left">
+                    <text class="pc-src">{{ draft.source === 'voice' ? '♪' : '≡' }}</text>
+                    <text class="pc-time">{{ draft.timeLabel }}</text>
+                  </view>
+                  <view class="org-btn" @tap="onOrganize(idx)">
+                    <text class="org-label">整理</text>
+                  </view>
+                </view>
+                <text class="pc-content">{{ draft.content }}</text>
+              </view>
             </view>
           </view>
 
-          <view class="record-section">
-            <text class="record-label">标签（可选）</text>
-            <view class="tag-row">
-              <text class="add-tag" @tap="addTag">+ 添加标签</text>
-              <text v-if="tagAdded" class="tag-chip">待复查</text>
-              <text v-if="uploadStatus.length > 0" class="tag-chip">影像资料</text>
-            </view>
-          </view>
-
-          <view class="action-stack">
-            <text class="scan-button" @tap="openScanSheet">扫描文档</text>
-            <text class="save-button" @tap="saveRecord">保存记录</text>
-          </view>
-          <text v-if="saveMessage.length > 0" class="save-message">{{ saveMessage }}</text>
+          <!-- Bottom spacing for scroll -->
+          <view style="height: 32px;"></view>
         </view>
       </scroll-view>
-
-      <BottomTabs active="home" />
-
-      <view v-if="showUploadSheet" class="record-modal-mask" @tap="closeSheets">
-        <view class="record-sheet" @tap="keepSheet">
-          <text class="sheet-title">添加影像资料</text>
-          <text class="sheet-copy">选择一种方式补充病例照片，稍后可继续编辑。</text>
-          <text class="sheet-option" @tap="confirmUploadCamera">拍摄照片</text>
-          <text class="sheet-option" @tap="confirmUploadAlbum">从相册选择</text>
-          <text class="sheet-cancel" @tap="closeSheets">暂不添加</text>
-        </view>
-      </view>
-
-      <view v-if="showScanSheet" class="record-modal-mask" @tap="closeSheets">
-        <view class="record-sheet" @tap="keepSheet">
-          <text class="sheet-title">扫描文档</text>
-          <text class="sheet-copy">用于病历、检查单和处方的快速归档。</text>
-          <text class="sheet-option" @tap="confirmScanCamera">打开扫描取景框</text>
-          <text class="sheet-option" @tap="confirmScanImport">导入已有文档</text>
-          <text class="sheet-cancel" @tap="closeSheets">取消</text>
-        </view>
-      </view>
     </view>
   </view>
 </template>
 
 <script lang="uts">
-import BottomTabs from '../../components/BottomTabs/BottomTabs.uvue'
-import VoiceCapture from '../../components/VoiceCapture/VoiceCapture.uvue'
-import AiArchiveFlow from '../../components/AiArchiveFlow/AiArchiveFlow.uvue'
-
 export default {
-  components: { BottomTabs, VoiceCapture, AiArchiveFlow },
   data() {
     return {
-      depts: ['内科', '外科', '儿科', '妇产科', '其他'],
-      currentDept: '内科',
-      diseaseName: '',
-      note: '',
-      symptoms: '',
-      treatment: '',
-      uploadStatus: '',
-      archiveStatus: '',
-      archiveState: 'idle',
-      archiveTimers: [] as any,
-      voiceFilePath: '',
-      voiceDuration: 0,
-      saveMessage: '',
-      tagAdded: false,
-      showUploadSheet: false,
-      showScanSheet: false,
-      pageReady: false
+      draftContent: '',
+      nextId: 3,
+      pendingDrafts: [
+        {
+          id: 1,
+          content: '关于瓣膜听诊区的定位补充：主动脉瓣第二听诊区位于胸骨左缘第3肋间...',
+          timeLabel: '今天 10:30 AM',
+          source: 'text'
+        },
+        {
+          id: 2,
+          content: '肺部啰音的鉴别诊断要点：干啰音与湿啰音的听诊音色差异及临床意义...',
+          timeLabel: '昨天 16:45',
+          source: 'voice'
+        }
+      ]
     }
-  },
-  onReady() {
-    setTimeout(() => { this.pageReady = true }, 16)
-  },
-  onUnload() {
-    this.clearArchiveTimers()
   },
   methods: {
     goBack() {
       uni.navigateBack()
     },
-    selectDept(dept) {
-      this.currentDept = dept
-      this.saveMessage = ''
+    onVoice() {
+      uni.showToast({ title: '正在录音...', icon: 'none' })
     },
-    openUploadSheet() {
-      this.showUploadSheet = true
-      this.showScanSheet = false
+    onImage() {
+      uni.showToast({ title: '正在打开相册...', icon: 'none' })
     },
-    openScanSheet() {
-      this.showScanSheet = true
-      this.showUploadSheet = false
+    onSmartArchive() {
+      uni.showToast({ title: '智能归档分析中...', icon: 'none' })
     },
-    closeSheets() {
-      this.showUploadSheet = false
-      this.showScanSheet = false
+    onViewAll() {
+      uni.showToast({ title: '查看全部待整理记录', icon: 'none' })
     },
-    keepSheet() {},
-    confirmUploadCamera() {
-      this.uploadStatus = '已准备拍摄病例照片，可继续补充临床笔记。'
-      this.closeSheets()
-    },
-    confirmUploadAlbum() {
-      this.uploadStatus = '已选择相册上传，系统会随记录一起保存。'
-      this.closeSheets()
-    },
-    confirmScanCamera() {
-      this.uploadStatus = '扫描取景框已准备，文档会自动归入本次记录。'
-      this.closeSheets()
-    },
-    confirmScanImport() {
-      this.uploadStatus = '已选择导入文档，保存后可在病例附件中查看。'
-      this.closeSheets()
-    },
-    autoArchive() {
-      this.startAiArchive(false)
-    },
-    handleVoiceProcessing() {
-      this.startAiArchive(true)
-    },
-    handleVoiceComplete(payload: any) {
-      this.voiceFilePath = payload.filePath
-      this.voiceDuration = payload.duration
-      this.uploadStatus = '已附加 ' + payload.duration + ' 秒临床语音，可继续补充病例信息。'
-    },
-    handleVoiceError() {
-      this.saveMessage = ''
-    },
-    startAiArchive(fromVoice: boolean) {
-      this.clearArchiveTimers()
-      this.archiveState = 'capturing'
-      this.archiveStatus = ''
-      this.saveMessage = ''
-      this.archiveTimers.push(setTimeout(() => {
-        this.archiveState = 'structuring'
-      }, fromVoice ? 420 : 320))
-      this.archiveTimers.push(setTimeout(() => {
-        const disease = this.diseaseName.length > 0 ? this.diseaseName : '未命名病例'
-        this.archiveState = 'ready'
-        this.archiveStatus = disease + ' · ' + this.currentDept + ' · 待完善病历'
-        this.tagAdded = true
-      }, fromVoice ? 1120 : 920))
-    },
-    clearArchiveTimers() {
-      for (const timer of this.archiveTimers) clearTimeout(timer)
-      this.archiveTimers = [] as any
-    },
-    addTag() {
-      this.tagAdded = true
-      this.saveMessage = '已添加常用标签，可继续补充记录。'
+    onOrganize(index: number) {
+      const draft = this.pendingDrafts[index]
+      if (draft != null) {
+        uni.showToast({ title: '整理：' + draft.content.substring(0, 10) + '...', icon: 'none' })
+      }
     },
     saveRecord() {
-      if (this.diseaseName.length == 0 || this.note.length == 0) {
-        this.saveMessage = '请先补充疾病名称和详细笔记，再保存记录。'
+      if (this.draftContent.length === 0) {
+        uni.showToast({ title: '请先输入内容再保存', icon: 'none' })
         return
       }
-      this.saveMessage = this.voiceFilePath.length > 0 ? '记录已保存，临床语音已作为本次附件保留。' : '记录已保存，可在首页最近记录中查看。'
+      const now = new Date()
+      const h = now.getHours()
+      const m = now.getMinutes()
+      const ampm = h >= 12 ? 'PM' : 'AM'
+      const h12 = h % 12 === 0 ? 12 : h % 12
+      const mm = m < 10 ? '0' + m : m
+      const timeLabel = '今天 ' + h12 + ':' + mm + ' ' + ampm
+      this.pendingDrafts.push({
+        id: this.nextId,
+        content: this.draftContent,
+        timeLabel: timeLabel,
+        source: 'text'
+      })
+      this.nextId++
+      this.draftContent = ''
+      uni.showToast({ title: '已保存到待整理', icon: 'success' })
     }
   }
 }
 </script>
 
 <style scoped>
-.record-page {
+/*
+ * ===== 新建记录页面 - 极简/待整理集成版 =====
+ * Stitch Design: 201-极简纯净版 / 202-待整理集成版
+ * 屏幕: iPhone 16 Pro (393x852)
+ * 可用宽度: 393 - 24*2(container-margin) = 345px
+ */
+
+/* ===== Header ===== */
+/* Stitch: bg-surface, flex items-center justify-between, px-container-margin, h-16, shrink-0, border-b */
+.r-header {
+  height: 64px;
+  padding: 0 24px;
   background-color: #faf9f9;
-}
-.record-phone-frame {
-  position: relative;
-}
-.record-content {
-  padding-left: 24px;
-  padding-right: 24px;
-  padding-top: 16px;
-  padding-bottom: 220px;
-  background-color: #faf9f9;
-}
-.record-hero {
-  display: flex;
-  flex-direction: column;
-}
-.record-nav {
-  height: 36px;
-  margin-bottom: 8px;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-bottom-color: rgba(193, 200, 198, 0.1);
   display: flex;
   flex-direction: row;
   align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
 }
-.record-back-hit {
+/* Back arrow: 36x44 hit area */
+.back-hit {
   width: 36px;
-  height: 36px;
+  height: 44px;
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: flex-start;
 }
-.record-back-icon {
-  color: #3b5e5b;
-  font-size: 34px;
-  line-height: 36px;
-  font-weight: 700;
-}
-.record-title {
-  color: #3b5e5b;
+.back-icon {
+  color: #1a1c1c;
   font-size: 24px;
+  line-height: 28px;
+}
+/* Title: font-headline-md, 18px, semibold, text-on-surface */
+.r-title {
+  color: #1a1c1c;
+  font-size: 18px;
   line-height: 32px;
-  font-weight: 700;
-}
-.record-subtitle {
-  margin-top: 8px;
-  color: #414847;
-  font-size: 14px;
-  line-height: 20px;
-}
-.record-section {
-  margin-top: 16px;
-}
-.record-label {
-  color: #414847;
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 700;
-}
-.dept-scroll {
-  width: 100%;
-  margin-top: 8px;
-}
-.dept-row {
-  width: 432px;
-  display: flex;
-  flex-direction: row;
-}
-.dept-chip {
-  height: 40px;
-  width: 74px;
-  margin-right: 8px;
-  padding-left: 16px;
-  padding-right: 16px;
-  border-radius: 20px;
-  background-color: #eeeeed;
-  border-width: 1px;
-  border-style: solid;
-  border-color: #c1c8c6;
-  color: #414847;
-  font-size: 14px;
-  line-height: 40px;
-  font-weight: 700;
-  text-align: center;
-}
-.dept-chip-active {
-  background-color: #3b5e5b;
-  border-color: #3b5e5b;
-  color: #ffffff;
-}
-.record-input {
-  width: 100%;
-  height: 46px;
-  box-sizing: border-box;
-  margin-top: 8px;
-  padding-left: 16px;
-  padding-right: 16px;
-  border-radius: 8px;
-  background-color: #eeeeed;
-  border-width: 1px;
-  border-style: solid;
-  border-color: #c1c8c6;
-  color: #1a1c1c;
-  font-size: 16px;
-}
-.upload-box {
-  width: 100%;
-  height: 50px;
-  margin-top: 14px;
-  border-radius: 8px;
-  border-width: 1px;
-  border-style: solid;
-  border-color: #717977;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-}
-.upload-camera {
-  width: 22px;
-  height: 17px;
-  margin-right: 10px;
-  border-radius: 4px;
-  border-width: 2px;
-  border-style: solid;
-  border-color: #3b5e5b;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-}
-.upload-camera-lens {
-  width: 7px;
-  height: 7px;
-  border-radius: 4px;
-  background-color: #3b5e5b;
-}
-.upload-copy {
-  color: #3b5e5b;
-  font-size: 13px;
-  line-height: 20px;
-  font-weight: 700;
-}
-.feedback-line {
-  margin-top: 8px;
-  color: #53615f;
-  font-size: 12px;
-  line-height: 18px;
-}
-.record-divider {
-  width: 100%;
-  height: 1px;
-  margin-top: 16px;
-  background-color: #c1c8c6;
-}
-.note-head {
-  width: 100%;
-  margin-top: 16px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-}
-.note-title {
-  color: #414847;
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 700;
-}
-.archive-pill {
-  height: 30px;
-  padding-left: 12px;
-  padding-right: 12px;
-  border-radius: 15px;
-  background-color: #eef5f3;
-  color: #3b5e5b;
-  font-size: 12px;
-  line-height: 30px;
-  font-weight: 700;
-}
-.archive-card {
-  margin-top: 12px;
-  padding: 12px;
-  border-radius: 8px;
-  background-color: #eef5f3;
-  border-width: 1px;
-  border-style: solid;
-  border-color: #d7e6e3;
-  display: flex;
-  flex-direction: column;
-}
-.archive-card-title {
-  color: #3b5e5b;
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 700;
-}
-.archive-card-copy {
-  margin-top: 4px;
-  color: #414847;
-  font-size: 13px;
-  line-height: 18px;
-}
-.note-section {
-  margin-top: 12px;
-}
-.detail-textarea {
-  width: 100%;
-  height: 96px;
-  box-sizing: border-box;
-  margin-top: 8px;
-  padding: 14px 16px;
-  border-radius: 8px;
-  background-color: #f4f3f3;
-  border-width: 1px;
-  border-style: solid;
-  border-color: #e3e2e2;
-  color: #1a1c1c;
-  font-size: 14px;
-  line-height: 20px;
-}
-.two-grid {
-  width: 100%;
-  margin-top: 16px;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-}
-.mini-field {
+  font-weight: 600;
   flex: 1;
+  text-align: center;
 }
-.mini-field-left {
-  margin-right: 16px;
-}
-.mini-textarea {
-  width: 100%;
-  height: 54px;
-  box-sizing: border-box;
-  margin-top: 8px;
-  padding: 10px 16px;
-  border-radius: 8px;
-  background-color: #f4f3f3;
-  border-width: 1px;
-  border-style: solid;
-  border-color: #e3e2e2;
-  color: #1a1c1c;
-  font-size: 14px;
-  line-height: 20px;
-}
-.tag-row {
-  margin-top: 8px;
+/* Right area: flex row, items center */
+.r-header-right {
   display: flex;
   flex-direction: row;
-  flex-wrap: wrap;
+  align-items: center;
 }
-.add-tag {
-  height: 32px;
-  padding-left: 12px;
-  padding-right: 12px;
-  margin-right: 8px;
-  margin-bottom: 8px;
-  border-radius: 16px;
-  background-color: #eeeeed;
-  border-width: 1px;
-  border-style: solid;
-  border-color: #c1c8c6;
-  color: #414847;
-  line-height: 32px;
-  text-align: center;
-  font-size: 12px;
-  font-weight: 700;
+/* Hint text: 10px, text-outline, tracking-wide, font-medium */
+.r-hint {
+  color: #717977;
+  font-size: 10px;
+  line-height: 14px;
+  font-weight: 500;
+  margin-right: 12px;
 }
-.tag-chip {
-  height: 32px;
-  padding-left: 12px;
-  padding-right: 12px;
-  margin-right: 8px;
-  margin-bottom: 8px;
-  border-radius: 16px;
-  background-color: #eef5f3;
-  color: #3b5e5b;
-  line-height: 32px;
-  text-align: center;
-  font-size: 12px;
-  font-weight: 700;
-}
-.action-stack {
-  width: 100%;
-  margin-top: 18px;
+/* Save button: bg-brand(#547774), rounded-full, text-white */
+.r-save-btn {
+  padding: 6px 20px;
+  border-radius: 999px;
+  background-color: #547774;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
 }
-.scan-button {
-  width: 100%;
-  height: 52px;
-  border-radius: 8px;
-  border-width: 1px;
-  border-style: solid;
-  border-color: #717977;
-  color: #53615f;
-  line-height: 52px;
-  text-align: center;
-  font-size: 13px;
-  font-weight: 700;
-}
-.save-button {
-  width: 100%;
-  height: 52px;
-  margin-top: 12px;
-  border-radius: 8px;
-  background-color: #3b5e5b;
+.r-save-label {
   color: #ffffff;
-  line-height: 52px;
-  text-align: center;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
 }
-.save-message {
-  margin-top: 10px;
-  color: #53615f;
-  font-size: 12px;
-  line-height: 18px;
-  text-align: center;
+
+/* ===== Main Content ===== */
+.r-main {
+  padding: 24px 24px 0;
 }
-.record-modal-mask {
-  position: absolute;
-  left: 0;
-  top: 0;
+
+/* ===== Input Card ===== */
+/* Stitch: bg-white, h-[280px], rounded-3xl(24px), pt-4(16px) px-6(24px) pb-6(24px), border, shadow */
+.input-card {
+  position: relative;
   width: 100%;
-  height: 793px;
-  background-color: rgba(26, 28, 28, 0.20);
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
+  height: 280px;
+  background-color: #ffffff;
+  border-radius: 24px;
+  padding: 16px 24px 24px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #f4f3f3;
 }
-.record-sheet {
-  padding: 20px 24px 26px;
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
+/* Textarea: full fill, transparent, no border, font-body-lg(18/28/400) */
+.input-ta {
+  width: 100%;
+  height: 100%;
+  background-color: transparent;
+  border-width: 0;
+  color: #1a1c1c;
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 400;
+  padding: 0;
+  margin: 0;
+}
+/* Sub-placeholder: ghost text below main placeholder */
+.input-sub-placeholder {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  margin-top: 32px;
+  max-width: 85%;
+  color: rgba(113, 121, 119, 0.5);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  pointer-events: none;
+}
+
+/* ===== Action Buttons ===== */
+/* Stitch: flex row, gap-3(12px), mt-4 */
+.action-row {
+  display: flex;
+  flex-direction: row;
+  margin-top: 16px;
+  width: 100%;
+}
+/* Common: flex-1, bg-white, rounded-2xl(16px), border, flex center, px-4 py-3 */
+.act-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0;
+  border-radius: 16px;
   background-color: #ffffff;
   border-width: 1px;
   border-style: solid;
-  border-color: #e3e2e2;
+  border-color: #f4f3f3;
+}
+.act-btn + .act-btn {
+  margin-left: 12px;
+}
+/* Smart archive: flex-[1.5], bg-brand/10, border-brand/20 */
+.act-smart {
+  flex: 1.5;
+  background-color: rgba(84, 119, 116, 0.1);
+  border-color: rgba(84, 119, 116, 0.2);
+}
+.act-icon {
+  font-size: 20px;
+  line-height: 24px;
+  color: #547774;
+  margin-right: 8px;
+}
+.act-label {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  color: #414847;
+}
+.act-smart .act-icon {
+  color: #547774;
+}
+.act-smart .act-label {
+  color: #547774;
+}
+
+/* ===== Pending Drafts Section ===== */
+/* Stitch: mt-6(24px) from actions, flex-col, gap-4(16px) */
+.pending-section {
+  margin-top: 32px;
   display: flex;
   flex-direction: column;
 }
-.sheet-title {
-  color: #1a1c1c;
+/* Header: flex, items-center, justify-between */
+.pending-head {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.ph-left {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.ph-icon {
   font-size: 18px;
-  line-height: 26px;
-  font-weight: 700;
+  line-height: 24px;
+  color: rgba(113, 121, 119, 0.6);
 }
-.sheet-copy {
-  margin-top: 6px;
-  color: #53615f;
-  font-size: 13px;
-  line-height: 18px;
+.ph-title {
+  font-size: 16px;
+  line-height: 24px;
+  color: #1a1c1c;
+  font-weight: 600;
+  margin-left: 8px;
 }
-.sheet-option {
-  height: 48px;
-  margin-top: 12px;
-  border-radius: 8px;
-  background-color: #eef5f3;
-  color: #3b5e5b;
+/* "查看全部": text-brand, font-body-sm, font-medium */
+.view-all {
   font-size: 14px;
-  line-height: 48px;
-  font-weight: 700;
-  text-align: center;
+  line-height: 20px;
+  font-weight: 500;
+  color: #547774;
 }
-.sheet-cancel {
-  height: 44px;
-  margin-top: 10px;
+
+/* ===== Pending Cards ===== */
+/* Stitch: bg-white, p-4(16px), rounded-2xl(16px), border, shadow, flex-col, gap-2(8px) */
+.pending-list {
+  display: flex;
+  flex-direction: column;
+}
+.pending-card {
+  background-color: #ffffff;
+  padding: 16px;
+  border-radius: 16px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #f4f3f3;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+/* Top row: flex, justify-between, items-start */
+.pc-top {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+/* Left: flex row, gap-2 items-center */
+.pc-left {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.pc-src {
+  font-size: 16px;
+  line-height: 20px;
+  color: #547774;
+}
+.pc-time {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
   color: #717977;
+  margin-left: 8px;
+}
+/* "整理" button: text-brand, font-semibold, px-3 py-1 rounded-full bg-brand/10 */
+.org-btn {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background-color: rgba(84, 119, 116, 0.1);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+.org-label {
   font-size: 14px;
-  line-height: 44px;
-  text-align: center;
+  line-height: 20px;
+  font-weight: 600;
+  color: #547774;
+}
+/* Content: font-body-sm, text-on-surface-variant, line-clamp-2 */
+.pc-content {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  color: #414847;
 }
 </style>
