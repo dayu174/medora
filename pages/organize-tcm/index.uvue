@@ -1,0 +1,332 @@
+<template>
+  <view class="app-page safe-top">
+    <view class="phone-frame">
+      <view class="tcm-header">
+        <view class="tcm-back-hit" @tap="goBack"><text class="tcm-back-icon">‹</text></view>
+        <text class="tcm-title">整理记录（中医）</text>
+        <text class="tcm-done" @tap="onDone">完成</text>
+      </view>
+
+      <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
+        <view class="tcm-main">
+          <view class="original-summary" @tap="toggleOriginalRecord">
+            <view class="original-summary-copy">
+              <text class="original-summary-title">原始记录</text>
+              <text class="original-summary-meta">{{ originalContent.length }} 字 · {{ referenceImages.length }} 项资料</text>
+            </view>
+            <text class="original-summary-action">{{ showOriginalRecord ? '收起' : '展开' }}</text>
+          </view>
+
+          <view v-if="showOriginalRecord" class="original-editor-card">
+            <textarea class="source-editor" auto-height="true" v-model="originalContent" placeholder="补充或删减原始记录..." />
+            <view class="reference-media-head">
+              <text class="reference-media-title">原始资料</text>
+              <text class="reference-media-add" @tap="addReferenceImages">添加</text>
+            </view>
+            <scroll-view v-if="referenceImages.length > 0" class="reference-media-scroll" scroll-x="true" :show-scrollbar="false">
+              <view class="reference-media-row">
+                <view v-for="(image, index) in referenceImages" :key="index" v-if="index < 3" class="reference-media-item" @tap="previewReferenceImage(index)">
+                  <image class="reference-media-image" :src="image" mode="aspectFill"></image>
+                  <text class="reference-media-delete" @tap.stop="removeReferenceImage(index)">×</text>
+                </view>
+                <view v-if="referenceImages.length > 3" class="reference-media-more" @tap="previewReferenceImage(3)">
+                  <text class="reference-media-more-count">+{{ referenceImages.length - 3 }}</text>
+                  <text class="reference-media-more-copy">查看全部</text>
+                </view>
+              </view>
+            </scroll-view>
+            <view v-else class="reference-empty" @tap="addReferenceImages"><text class="reference-empty-copy">添加原始图片以便核对</text></view>
+          </view>
+
+          <view class="analysis-head"><text class="analysis-title">辨证分析</text></view>
+          <view class="analysis-card">
+            <text class="field-caption">知识标题</text>
+            <input class="record-title-input" v-model="recordTitle" placeholder="输入简明标题..." />
+            <text class="field-caption analysis-caption">辨证结论与证候依据</text>
+            <textarea class="analysis-textarea" auto-height="true" v-model="patternAnalysis" placeholder="录入辨证结论、病机与证候依据..." />
+          </view>
+
+          <view class="four-diagnosis-card">
+            <text class="field-caption">四诊摘要</text>
+            <view class="inspection-row">
+              <view v-for="item in inspections" :key="item" class="inspection-pill" :class="selectedInspection === item ? 'inspection-pill-active' : ''" @tap="selectedInspection = item">
+                <text class="inspection-text" :class="selectedInspection === item ? 'inspection-text-active' : ''">{{ item }}</text>
+              </view>
+            </view>
+            <textarea class="four-diagnosis-textarea" auto-height="true" v-model="tonguePulse" placeholder="记录舌象、脉象或四诊观察..." />
+          </view>
+
+          <view class="treatment-card">
+            <text class="treatment-label">治则治法</text>
+            <textarea class="treatment-textarea" auto-height="true" v-model="treatmentPrinciples" placeholder="录入治则治法..." />
+          </view>
+
+          <view class="formula-summary-card" @tap="toggleFormulaStructure">
+            <view class="formula-summary-head"><text class="formula-summary-title">方药结构</text><text class="formula-summary-action">{{ showFormulaStructure ? '收起' : '展开' }}</text></view>
+            <text class="formula-summary-copy">{{ bigFormulas.length }} 个大方 · {{ smallFormulaCount() }} 个小方 · {{ formulaMedicineCount() }} 味药 · {{ sharedMedicineCount() }} 处共用</text>
+          </view>
+
+          <view v-if="showFormulaStructure" class="formula-structure">
+            <view class="shared-note"><text class="shared-note-label">共用药物</text><text class="shared-note-copy">暖色标签表示该药在两个或更多小方中出现</text></view>
+            <view v-for="(bigFormula, bigIndex) in bigFormulas" :key="bigIndex" class="big-formula-card">
+              <view class="big-formula-head">
+                <input class="big-formula-name" v-model="bigFormula.name" placeholder="大方名称" />
+                <text class="big-formula-delete" @tap="removeBigFormula(bigIndex)">×</text>
+              </view>
+              <textarea class="big-formula-note" auto-height="true" v-model="bigFormula.note" placeholder="合方说明或使用方向..." />
+              <view v-for="(smallFormula, smallIndex) in bigFormula.smallFormulas" :key="smallIndex" class="small-formula-card">
+                <view class="small-formula-head">
+                  <input class="small-formula-name" v-model="smallFormula.name" placeholder="小方名称" />
+                  <text class="small-formula-delete" @tap="removeSmallFormula(bigIndex, smallIndex)">×</text>
+                </view>
+                <input class="small-formula-role" v-model="smallFormula.role" placeholder="小方作用，例如：基础方 · 健脾益气" />
+                <view class="formula-medicine-row" v-for="(medicine, medicineIndex) in smallFormula.medicines" :key="medicineIndex">
+                  <view class="medicine-name-wrap" :class="isSharedMedicine(medicine.name) ? 'medicine-name-wrap-shared' : ''">
+                    <input class="medicine-name-input" v-model="medicine.name" placeholder="药味" />
+                    <text v-if="isSharedMedicine(medicine.name)" class="medicine-shared-mark">共用</text>
+                  </view>
+                  <input class="medicine-dose-input" v-model="medicine.dose" placeholder="剂量/待核实" />
+                  <text class="medicine-remove" @tap="removeMedicine(bigIndex, smallIndex, medicineIndex)">×</text>
+                </view>
+                <text class="add-medicine" @tap="addMedicine(bigIndex, smallIndex)">+ 添加药味</text>
+              </view>
+              <view class="add-small-formula" @tap="addSmallFormula(bigIndex)"><text class="add-small-formula-text">+ 添加小方</text></view>
+            </view>
+            <view class="add-big-formula" @tap="addBigFormula"><text class="add-big-formula-text">+ 添加大方</text></view>
+            <view class="formula-total-card"><text class="formula-total-label">大方合方 · {{ formulaMedicineCount() }} 味药</text><text class="formula-total-copy">重复药物已标记，请在编辑状态核对名称与剂量。</text></view>
+          </view>
+
+          <view class="tag-section">
+            <text class="field-caption">标签</text>
+            <view class="tag-row"><view v-for="(tag, index) in tags" :key="index" class="tag-pill"><text class="tag-text">{{ tag }}</text><text class="tag-remove" @tap="removeTag(index)">×</text></view></view>
+            <view class="tag-entry-row"><input class="tag-input" v-model="newTag" placeholder="添加标签..." /><text class="tag-add" @tap="addTag">添加</text></view>
+          </view>
+          <view v-if="missingFields.length > 0" class="notice-card"><text class="notice-title">待补充或待核实</text><text class="notice-text">{{ missingFields.join('、') }}</text></view>
+          <view class="tcm-bottom-space"></view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+</template>
+
+<script lang="uts">
+interface FormulaMedicine { name: string, dose: string }
+interface SmallFormula { name: string, role: string, medicines: FormulaMedicine[] }
+interface BigFormula { name: string, note: string, smallFormulas: SmallFormula[] }
+
+export default {
+  data() {
+    return {
+      draftIndex: -1,
+      sourceMode: 'draft',
+      archiveKey: '',
+      originalContent: '',
+      referenceImages: [] as string[],
+      showOriginalRecord: false,
+      recordTitle: '',
+      selectedInspection: '望诊',
+      inspections: ['望诊', '闻诊', '问诊', '切诊'],
+      tonguePulse: '',
+      patternAnalysis: '',
+      treatmentPrinciples: '',
+      bigFormulas: [] as BigFormula[],
+      showFormulaStructure: false,
+      tags: [] as string[],
+      newTag: '',
+      missingFields: [] as string[]
+    }
+  },
+  onLoad(options: any) {
+    this.draftIndex = options != null && options.draftIndex != null ? parseInt(options.draftIndex) : -1
+    this.sourceMode = options != null && options.sourceMode != null ? options.sourceMode as string : 'draft'
+    this.archiveKey = options != null && options.archiveKey != null ? options.archiveKey as string : ''
+    const stored = this.archiveKey !== '' ? uni.getStorageSync('archivePayload_' + this.archiveKey) as any : null
+    if (stored != null) {
+      this.originalContent = stored.sourceContent != null ? stored.sourceContent as string : ''
+      this.referenceImages = Array.isArray(stored.images) ? stored.images : []
+      const tcm = stored.payload != null && stored.payload.tcm != null ? stored.payload.tcm : {}
+      this.tonguePulse = tcm.tonguePulse != null ? tcm.tonguePulse as string : ''
+      this.patternAnalysis = tcm.patternAnalysis != null ? tcm.patternAnalysis as string : ''
+      this.treatmentPrinciples = tcm.treatmentPrinciples != null ? tcm.treatmentPrinciples as string : ''
+      this.tags = Array.isArray(tcm.tags) ? tcm.tags : []
+      this.missingFields = Array.isArray(tcm.missingFields) ? tcm.missingFields : []
+      if (Array.isArray(tcm.herbs) && tcm.herbs.length > 0) {
+        this.bigFormulas.push({ name: '默认大方', note: tcm.formulaHerbs != null ? tcm.formulaHerbs as string : '', smallFormulas: [{ name: '默认小方', role: '待核实', medicines: tcm.herbs }] })
+      }
+    }
+    if (this.originalContent === '' && options != null && options.content != null) this.originalContent = options.content as string
+    const firstLine = this.originalContent.split('\n')[0]
+    this.recordTitle = firstLine != null && firstLine !== '' ? firstLine.substring(0, 20) : '中医整理记录'
+  },
+  methods: {
+    goBack() { uni.navigateBack() },
+    toggleOriginalRecord() { this.showOriginalRecord = !this.showOriginalRecord },
+    previewReferenceImage(index: number) { if (this.referenceImages.length > 0) uni.previewImage({ current: this.referenceImages[index], urls: this.referenceImages }) },
+    addReferenceImages() {
+      const remain = 6 - this.referenceImages.length
+      if (remain <= 0) { uni.showToast({ title: '最多保留 6 张原始资料', icon: 'none' }); return }
+      uni.chooseImage({ count: remain, sizeType: ['compressed'], sourceType: ['album', 'camera'], success: (res: any) => {
+        if (res != null && res.tempFilePaths != null) for (let i = 0; i < res.tempFilePaths.length && this.referenceImages.length < 6; i++) this.referenceImages.push(res.tempFilePaths[i])
+      } })
+    },
+    removeReferenceImage(index: number) { this.referenceImages.splice(index, 1) },
+    toggleFormulaStructure() { this.showFormulaStructure = !this.showFormulaStructure },
+    addBigFormula() { this.bigFormulas.push({ name: '新建大方', note: '', smallFormulas: [] }) },
+    removeBigFormula(index: number) { this.bigFormulas.splice(index, 1) },
+    addSmallFormula(bigIndex: number) { this.bigFormulas[bigIndex].smallFormulas.push({ name: '新建小方', role: '', medicines: [] }) },
+    removeSmallFormula(bigIndex: number, smallIndex: number) { this.bigFormulas[bigIndex].smallFormulas.splice(smallIndex, 1) },
+    addMedicine(bigIndex: number, smallIndex: number) { this.bigFormulas[bigIndex].smallFormulas[smallIndex].medicines.push({ name: '', dose: '' }) },
+    removeMedicine(bigIndex: number, smallIndex: number, medicineIndex: number) { this.bigFormulas[bigIndex].smallFormulas[smallIndex].medicines.splice(medicineIndex, 1) },
+    isSharedMedicine(name: string) {
+      const normalized = name.trim()
+      if (normalized === '') return false
+      let count = 0
+      for (let i = 0; i < this.bigFormulas.length; i++) {
+        const smallFormulas = this.bigFormulas[i].smallFormulas
+        for (let j = 0; j < smallFormulas.length; j++) {
+          const medicines = smallFormulas[j].medicines
+          for (let k = 0; k < medicines.length; k++) if (medicines[k].name.trim() === normalized) { count++; break }
+        }
+      }
+      return count > 1
+    },
+    smallFormulaCount() { let count = 0; for (let i = 0; i < this.bigFormulas.length; i++) count += this.bigFormulas[i].smallFormulas.length; return count },
+    formulaMedicineCount() {
+      let count = 0
+      for (let i = 0; i < this.bigFormulas.length; i++) for (let j = 0; j < this.bigFormulas[i].smallFormulas.length; j++) count += this.bigFormulas[i].smallFormulas[j].medicines.length
+      return count
+    },
+    sharedMedicineCount() {
+      const seen = [] as string[]
+      let count = 0
+      for (let i = 0; i < this.bigFormulas.length; i++) {
+        const smallFormulas = this.bigFormulas[i].smallFormulas
+        for (let j = 0; j < smallFormulas.length; j++) for (let k = 0; k < smallFormulas[j].medicines.length; k++) {
+          const name = smallFormulas[j].medicines[k].name.trim()
+          if (name !== '' && seen.indexOf(name) < 0 && this.isSharedMedicine(name)) { seen.push(name); count++ }
+        }
+      }
+      return count
+    },
+    formulaSummary() {
+      const values = [] as string[]
+      for (let i = 0; i < this.bigFormulas.length; i++) {
+        const bigFormula = this.bigFormulas[i]
+        const smallValues = [] as string[]
+        for (let j = 0; j < bigFormula.smallFormulas.length; j++) {
+          const smallFormula = bigFormula.smallFormulas[j]
+          const names = [] as string[]
+          for (let k = 0; k < smallFormula.medicines.length; k++) if (smallFormula.medicines[k].name.trim() !== '') names.push(smallFormula.medicines[k].name)
+          if (smallFormula.name.trim() !== '' || names.length > 0) smallValues.push(smallFormula.name + '：' + names.join('、'))
+        }
+        if (bigFormula.name.trim() !== '' || smallValues.length > 0) values.push(bigFormula.name + '\n' + smallValues.join('\n'))
+      }
+      return values.join('\n\n')
+    },
+    addTag() { const tag = this.newTag.trim(); if (tag !== '') { this.tags.push(tag); this.newTag = '' } },
+    removeTag(index: number) { this.tags.splice(index, 1) },
+    onDone() {
+      if (this.recordTitle.trim() === '') { uni.showToast({ title: '请填写知识标题', icon: 'none' }); return }
+      const eventChannel = this.getOpenerEventChannel()
+      eventChannel.emit('organizeDone', {
+        draftIndex: this.draftIndex, sourceMode: this.sourceMode, archiveKey: this.archiveKey, title: this.recordTitle, dept: '中医', points: this.patternAnalysis, diagnosis: this.treatmentPrinciples,
+        customFields: [{ name: '原始记录', value: this.originalContent }, { name: '四诊信息', value: this.tonguePulse }, { name: '方药结构', value: this.formulaSummary() }], tags: this.tags, referenceImages: this.referenceImages
+      })
+      uni.showToast({ title: '整理完成', icon: 'success' })
+      setTimeout(() => { uni.navigateBack() }, 500)
+    }
+  }
+}
+</script>
+
+<style scoped>
+.tcm-header { height: 64px; padding-left: 24px; padding-right: 24px; background-color: #faf9f9; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #eeefee; display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.tcm-back-hit { width: 40px; height: 44px; display: flex; flex-direction: row; align-items: center; }
+.tcm-back-icon { color: #1a1c1c; font-size: 28px; line-height: 32px; }
+.tcm-title { color: #1a1c1c; font-size: 17px; line-height: 24px; font-weight: 600; }
+.tcm-done { color: #547774; font-size: 15px; line-height: 24px; font-weight: 600; width: 40px; text-align: right; }
+.tcm-main { padding: 18px 24px 0; display: flex; flex-direction: column; }
+.original-summary { background-color: #f1f5f4; border-radius: 12px; padding: 13px 14px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.original-summary-copy { display: flex; flex-direction: column; }
+.original-summary-title { color: #3b5e5b; font-size: 14px; line-height: 20px; font-weight: 700; }
+.original-summary-meta { color: #717977; font-size: 11px; line-height: 16px; margin-top: 2px; }
+.original-summary-action { color: #547774; font-size: 13px; line-height: 20px; font-weight: 600; }
+.original-editor-card { background-color: #ffffff; border-radius: 12px; border-width: 1px; border-style: solid; border-color: #d8e0de; padding: 14px; margin-top: 8px; display: flex; flex-direction: column; }
+.source-editor { width: 100%; min-height: 44px; box-sizing: border-box; border-width: 0; color: #414847; font-size: 13px; line-height: 21px; background-color: transparent; padding: 0; }
+.reference-media-head { margin-top: 14px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.reference-media-title { color: #414847; font-size: 13px; line-height: 20px; font-weight: 700; }
+.reference-media-add { color: #547774; font-size: 13px; line-height: 20px; font-weight: 600; }
+.reference-media-scroll { width: 100%; margin-top: 8px; }
+.reference-media-row { display: flex; flex-direction: row; padding-right: 8px; }
+.reference-media-item { width: 76px; height: 76px; border-radius: 9px; overflow: hidden; margin-right: 8px; position: relative; background-color: #edf1f0; }
+.reference-media-image { width: 76px; height: 76px; }
+.reference-media-delete { position: absolute; right: 4px; top: 3px; width: 18px; height: 18px; border-radius: 9px; background-color: rgba(26, 28, 28, 0.65); color: #ffffff; font-size: 13px; line-height: 18px; text-align: center; }
+.reference-media-more { width: 76px; height: 76px; border-radius: 9px; background-color: #e8f1ef; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.reference-media-more-count { color: #3b5e5b; font-size: 17px; line-height: 22px; font-weight: 700; }
+.reference-media-more-copy { color: #547774; font-size: 10px; line-height: 14px; }
+.reference-empty { height: 46px; margin-top: 8px; border-radius: 9px; border-width: 1px; border-style: dashed; border-color: #c1c8c6; display: flex; flex-direction: row; align-items: center; justify-content: center; }
+.reference-empty-copy { color: #717977; font-size: 12px; line-height: 18px; }
+.analysis-head { margin-top: 24px; margin-bottom: 10px; }
+.analysis-title { color: #294b48; font-size: 23px; line-height: 32px; font-weight: 700; }
+.analysis-card { background-color: #ffffff; border-radius: 14px; border-width: 1px; border-style: solid; border-color: #d8e0de; padding: 16px; display: flex; flex-direction: column; }
+.field-caption { color: #717977; font-size: 12px; line-height: 18px; font-weight: 600; }
+.record-title-input { width: 100%; height: 40px; box-sizing: border-box; border-width: 0; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #d8e0de; color: #1a1c1c; font-size: 17px; line-height: 24px; font-weight: 700; background-color: transparent; padding: 0; }
+.analysis-caption { margin-top: 14px; margin-bottom: 6px; color: #547774; }
+.analysis-textarea { width: 100%; min-height: 46px; box-sizing: border-box; border-width: 0; color: #1a1c1c; font-size: 15px; line-height: 23px; background-color: transparent; padding: 0; }
+.four-diagnosis-card { margin-top: 12px; background-color: #ffffff; border-radius: 12px; border-width: 1px; border-style: solid; border-color: #d8e0de; padding: 14px; display: flex; flex-direction: column; }
+.inspection-row { display: flex; flex-direction: row; margin-top: 9px; margin-bottom: 8px; }
+.inspection-pill { padding: 6px 10px; margin-right: 6px; border-radius: 14px; background-color: #f3f5f4; border-width: 1px; border-style: solid; border-color: #d6dddb; }
+.inspection-pill-active { background-color: #547774; border-color: #547774; }
+.inspection-text { color: #53605e; font-size: 12px; line-height: 18px; font-weight: 600; }
+.inspection-text-active { color: #ffffff; }
+.four-diagnosis-textarea { width: 100%; min-height: 42px; box-sizing: border-box; border-width: 0; background-color: transparent; color: #414847; font-size: 13px; line-height: 20px; padding: 0; }
+.treatment-card { margin-top: 12px; border-radius: 14px; background-color: #294b48; padding: 14px 16px; display: flex; flex-direction: column; }
+.treatment-label { color: #cfe2de; font-size: 11px; line-height: 16px; font-weight: 600; margin-bottom: 4px; }
+.treatment-textarea { width: 100%; min-height: 42px; box-sizing: border-box; border-width: 0; background-color: transparent; color: #ffffff; font-size: 16px; line-height: 23px; font-weight: 600; padding: 0; }
+.formula-summary-card { margin-top: 14px; background-color: #ffffff; border-radius: 14px; border-width: 1px; border-style: solid; border-color: #d8e0de; padding: 14px 16px; display: flex; flex-direction: column; }
+.formula-summary-head { display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.formula-summary-title { color: #1a1c1c; font-size: 16px; line-height: 23px; font-weight: 700; }
+.formula-summary-action { color: #547774; font-size: 13px; line-height: 20px; font-weight: 600; }
+.formula-summary-copy { margin-top: 5px; color: #717977; font-size: 12px; line-height: 18px; }
+.formula-structure { margin-top: 12px; display: flex; flex-direction: column; }
+.shared-note { border-radius: 10px; background-color: #fff5de; padding: 10px 12px; display: flex; flex-direction: column; }
+.shared-note-label { color: #765922; font-size: 11px; line-height: 16px; font-weight: 700; }
+.shared-note-copy { color: #6e6250; font-size: 12px; line-height: 18px; margin-top: 2px; }
+.big-formula-card { margin-top: 10px; border-radius: 13px; background-color: #eaf3f1; padding: 14px; display: flex; flex-direction: column; }
+.big-formula-head { display: flex; flex-direction: row; align-items: center; }
+.big-formula-name { flex: 1; height: 30px; box-sizing: border-box; border-width: 0; color: #294b48; font-size: 17px; line-height: 24px; font-weight: 700; background-color: transparent; padding: 0; }
+.big-formula-delete { width: 24px; color: #8a3c32; font-size: 18px; line-height: 24px; text-align: right; }
+.big-formula-note { width: 100%; min-height: 38px; box-sizing: border-box; border-width: 0; color: #53615f; font-size: 12px; line-height: 19px; background-color: transparent; padding: 0; margin-top: 4px; }
+.small-formula-card { margin-top: 10px; border-radius: 10px; background-color: #ffffff; border-width: 1px; border-style: solid; border-color: #d8e0de; padding: 12px; display: flex; flex-direction: column; }
+.small-formula-head { display: flex; flex-direction: row; align-items: center; }
+.small-formula-name { flex: 1; height: 28px; box-sizing: border-box; border-width: 0; color: #1a1c1c; font-size: 15px; line-height: 22px; font-weight: 700; background-color: transparent; padding: 0; }
+.small-formula-delete { width: 24px; color: #8a3c32; font-size: 17px; line-height: 22px; text-align: right; }
+.small-formula-role { width: 100%; height: 30px; box-sizing: border-box; border-width: 0; color: #717977; font-size: 12px; line-height: 18px; background-color: transparent; padding: 0; margin-top: 2px; }
+.formula-medicine-row { margin-top: 8px; display: flex; flex-direction: row; align-items: center; }
+.medicine-name-wrap { flex: 1; height: 40px; box-sizing: border-box; border-width: 1px; border-style: solid; border-color: #d8e0de; border-radius: 8px; padding-left: 9px; padding-right: 6px; display: flex; flex-direction: row; align-items: center; }
+.medicine-name-wrap-shared { background-color: #fff5de; border-color: #e5c55c; }
+.medicine-name-input { flex: 1; height: 34px; border-width: 0; background-color: transparent; color: #1a1c1c; font-size: 13px; padding: 0; }
+.medicine-shared-mark { color: #765922; font-size: 10px; line-height: 14px; font-weight: 700; }
+.medicine-dose-input { width: 98px; height: 40px; box-sizing: border-box; border-width: 1px; border-style: solid; border-color: #d8e0de; border-radius: 8px; padding-left: 8px; padding-right: 8px; background-color: #ffffff; color: #414847; font-size: 12px; margin-left: 8px; }
+.medicine-remove { width: 24px; color: #8a3c32; font-size: 17px; line-height: 22px; text-align: right; }
+.add-medicine { color: #547774; font-size: 12px; line-height: 18px; font-weight: 600; margin-top: 12px; }
+.add-small-formula { height: 40px; margin-top: 10px; border-radius: 9px; border-width: 1px; border-style: dashed; border-color: #b9c7c4; display: flex; flex-direction: row; align-items: center; justify-content: center; }
+.add-small-formula-text { color: #547774; font-size: 12px; line-height: 18px; font-weight: 600; }
+.add-big-formula { height: 44px; margin-top: 10px; border-radius: 10px; border-width: 1px; border-style: dashed; border-color: #93aaa5; display: flex; flex-direction: row; align-items: center; justify-content: center; }
+.add-big-formula-text { color: #3b5e5b; font-size: 13px; line-height: 20px; font-weight: 700; }
+.formula-total-card { margin-top: 10px; border-radius: 14px; background-color: #294b48; padding: 14px; display: flex; flex-direction: column; }
+.formula-total-label { color: #d7ebe7; font-size: 12px; line-height: 18px; font-weight: 700; }
+.formula-total-copy { color: #ffffff; font-size: 12px; line-height: 18px; margin-top: 3px; }
+.tag-section { margin-top: 20px; display: flex; flex-direction: column; }
+.tag-row { margin-top: 8px; display: flex; flex-direction: row; flex-wrap: wrap; }
+.tag-pill { display: flex; flex-direction: row; align-items: center; background-color: #ebf3f1; border-radius: 15px; padding: 5px 10px; margin-right: 8px; margin-bottom: 8px; }
+.tag-text { color: #3b5e5b; font-size: 13px; line-height: 18px; }
+.tag-remove { color: #547774; font-size: 15px; line-height: 18px; margin-left: 5px; }
+.tag-entry-row { display: flex; flex-direction: row; align-items: center; margin-top: 4px; }
+.tag-input { flex: 1; height: 38px; box-sizing: border-box; border-width: 1px; border-style: solid; border-color: #d6dddb; border-radius: 8px; padding-left: 10px; padding-right: 10px; font-size: 13px; color: #1a1c1c; background-color: #ffffff; }
+.tag-add { color: #547774; font-size: 14px; line-height: 22px; font-weight: 600; padding-left: 14px; padding-right: 2px; }
+.notice-card { margin-top: 16px; background-color: #fff8e7; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; }
+.notice-title { color: #775d22; font-size: 13px; line-height: 18px; font-weight: 600; margin-bottom: 4px; }
+.notice-text { color: #6d6250; font-size: 13px; line-height: 19px; }
+.tcm-bottom-space { height: 34px; }
+</style>

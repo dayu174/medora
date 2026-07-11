@@ -1,0 +1,108 @@
+function asText(value, fallback = '') {
+  return typeof value === 'string' ? value.trim() : fallback
+}
+
+function asObject(value) {
+  return value != null && typeof value === 'object' && !Array.isArray(value) ? value : {}
+}
+
+function asTextList(value) {
+  if (!Array.isArray(value)) return []
+  const list = []
+  for (let i = 0; i < value.length; i++) {
+    const item = asText(value[i])
+    if (item !== '') list.push(item)
+  }
+  return list
+}
+
+function asHerbList(value) {
+  if (!Array.isArray(value)) return []
+  const list = []
+  for (let i = 0; i < value.length; i++) {
+    const herb = asObject(value[i])
+    const name = asText(herb.name)
+    if (name !== '') {
+      list.push({ name: name, dose: asText(herb.dose, '待核实') })
+    }
+  }
+  return list
+}
+
+function normalizeRoute(value) {
+  const route = asText(value).toLowerCase()
+  if (route === 'tcm' || route === 'western' || route === 'quick_note') return route
+  return 'uncertain'
+}
+
+export function parseArchivePayload(content) {
+  if (typeof content !== 'string' || content.trim() === '') return null
+
+  let candidate = content.trim()
+  if (candidate.startsWith('```')) {
+    const firstBreak = candidate.indexOf('\n')
+    const lastFence = candidate.lastIndexOf('```')
+    if (firstBreak >= 0 && lastFence > firstBreak) {
+      candidate = candidate.substring(firstBreak + 1, lastFence).trim()
+    }
+  }
+
+  const start = candidate.indexOf('{')
+  const end = candidate.lastIndexOf('}')
+  if (start < 0 || end <= start) return null
+
+  try {
+    const raw = JSON.parse(candidate.substring(start, end + 1))
+    const tcm = asObject(raw.tcm)
+    const western = asObject(raw.western)
+    const quickNote = asObject(raw.quickNote)
+    return {
+      route: normalizeRoute(raw.route),
+      routeReason: asText(raw.routeReason),
+      tcm: {
+        tonguePulse: asText(tcm.tonguePulse),
+        patternAnalysis: asText(tcm.patternAnalysis),
+        treatmentPrinciples: asText(tcm.treatmentPrinciples),
+        formulaHerbs: asText(tcm.formulaHerbs),
+        herbs: asHerbList(tcm.herbs),
+        tags: asTextList(tcm.tags),
+        missingFields: asTextList(tcm.missingFields)
+      },
+      western: {
+        title: asText(western.title),
+        department: asText(western.department),
+        clinicalPoints: asText(western.clinicalPoints),
+        diagnosisAdvice: asText(western.diagnosisAdvice),
+        customFields: Array.isArray(western.customFields) ? western.customFields : [],
+        tags: asTextList(western.tags),
+        missingFields: asTextList(western.missingFields)
+      },
+      quickNote: {
+        title: asText(quickNote.title),
+        content: asText(quickNote.content),
+        department: asText(quickNote.department),
+        tags: asTextList(quickNote.tags)
+      }
+    }
+  } catch (error) {
+    return null
+  }
+}
+
+export function resolveArchiveRoute(payload) {
+  if (payload == null) return 'uncertain'
+  return normalizeRoute(payload.route)
+}
+
+export function parseArchiveTitle(content) {
+  if (typeof content !== 'string' || content.trim() === '') return ''
+  const start = content.indexOf('{')
+  const end = content.lastIndexOf('}')
+  if (start < 0 || end <= start) return ''
+  try {
+    const raw = JSON.parse(content.substring(start, end + 1))
+    return asText(raw.title)
+  } catch (error) {
+    return ''
+  }
+}

@@ -24,7 +24,7 @@ for (const file of listFiles("pages")) {
     errors.push(`${file}: home header must use the search icon asset`);
   }
   if (file.replace(/\\/g, "/") === "pages/library/index.uvue") {
-    if (!source.includes('actionIcon="/static/icons/search.png"')) {
+    if (!source.includes('src="/static/icons/search.png"')) {
       errors.push(`${file}: library header must use the search icon asset`);
     }
     if (source.includes('action="搜"')) {

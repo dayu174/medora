@@ -103,6 +103,12 @@
             </view>
           </view>
 
+          <view :class="entryClass('detail-delete-zone', 5)">
+            <view class="detail-delete-button" @tap="confirmDelete">
+              <text class="detail-delete-text">删除此知识卡</text>
+            </view>
+          </view>
+
           <!-- Spacer -->
           <view style="height: 24px;"></view>
         </view>
@@ -118,6 +124,7 @@ export default {
   data() {
     return {
       data: diseases.heartFailure,
+      diseaseId: '',
       isBookmarked: false,
       pageReady: false,
       bookmarkPressed: false
@@ -125,6 +132,7 @@ export default {
   },
   onLoad(options: any) {
     const id = options.id as string
+    this.diseaseId = id != null ? id : ''
     if (id && id.length > 0 && (diseases as any)[id] != null) {
       this.data = (diseases as any)[id]
     }
@@ -139,6 +147,51 @@ export default {
     toggleBookmark() {
       this.isBookmarked = !this.isBookmarked
       uni.showToast({ title: this.isBookmarked ? '已收藏' : '已取消收藏', icon: 'none' })
+    },
+    confirmDelete() {
+      if (this.diseaseId.indexOf('custom_') !== 0) {
+        uni.showToast({ title: '内置资料暂不支持删除', icon: 'none' })
+        return
+      }
+      uni.showModal({
+        title: '删除知识卡',
+        content: '删除后无法恢复，确认删除吗？',
+        confirmText: '删除',
+        confirmColor: '#A34336',
+        success: (result: any) => {
+          if (result != null && result.confirm) this.deleteKnowledgeCard()
+        }
+      })
+    },
+    deleteKnowledgeCard() {
+      const cards = this.readStorageList('customKnowledgeCardsJson', 'customKnowledgeCards')
+      for (let index = 0; index < cards.length; index++) {
+        if (cards[index].diseaseId === this.diseaseId) {
+          cards.splice(index, 1)
+          this.writeStorageList('customKnowledgeCardsJson', 'customKnowledgeCards', cards)
+          uni.showToast({ title: '已删除', icon: 'success' })
+          setTimeout(() => { uni.navigateBack() }, 400)
+          return
+        }
+      }
+      uni.showToast({ title: '未找到该知识卡', icon: 'none' })
+    },
+    storageList(raw: any) {
+      const normalized = raw != null ? JSON.parse(JSON.stringify(raw)) as any : []
+      return Array.isArray(normalized) ? normalized : [] as any[]
+    },
+    readStorageList(jsonKey: string, legacyKey: string) {
+      const serialized = uni.getStorageSync(jsonKey) as string
+      if (serialized != null && serialized !== '') {
+        try {
+          return this.storageList(JSON.parse(serialized))
+        } catch (error) {}
+      }
+      return this.storageList(uni.getStorageSync(legacyKey))
+    },
+    writeStorageList(jsonKey: string, legacyKey: string, list: any[]) {
+      uni.setStorageSync(legacyKey, list)
+      uni.setStorageSync(jsonKey, JSON.stringify(list))
     },
     entryClass(base: string, index: number) {
       let value = base + ' motion-enter'
@@ -469,5 +522,28 @@ export default {
   color: #434842;
   font-size: 10px;
   line-height: 14px;
+}
+.detail-delete-zone {
+  margin-top: 8px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+.detail-delete-button {
+  height: 44px;
+  border-radius: 8px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #e7c6c1;
+  background-color: #fff9f8;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+.detail-delete-text {
+  color: #a34336;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
 }
 </style>

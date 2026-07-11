@@ -1,57 +1,212 @@
 <template>
   <view class="app-page safe-top">
     <view class="phone-frame">
-      <AppHeader title="Medora" :brand="true" :compact="true" actionIcon="/static/icons/search.png" @action="onSearch" />
+      <view class="library-header">
+        <text class="library-brand">Medora</text>
+        <view class="library-search-hit" @tap="onSearch"><image class="search-icon-img" src="/static/icons/search.png" mode="aspectFit"></image></view>
+      </view>
       <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
         <view :class="entryClass('content library-main', 0)">
           <view class="tabs-row">
             <text v-for="tab in categoryTabs" :key="tab" :class="activeCategory == tab ? 'ghost-button ghost-button-active cat-tab' : 'ghost-button cat-tab'" @tap="activeCategory = tab">{{ tab }}</text>
           </view>
           <view class="article-list">
-            <view v-for="(card, index) in cards" :key="card.title" :class="articleClass(index)" @touchstart="pressCard(index)" @touchend="releaseCard" @touchcancel="releaseCard" @tap="go('/pages/knowledge-detail/index?id=' + card.diseaseId)">
-              <view class="article-head">
-                <text class="article-title">{{ card.title }}</text>
-                <text class="pill">{{ card.dept }}</text>
-              </view>
-              <text class="article-summary">{{ card.summary }}</text>
-              <view class="article-footer">
-                <text class="reviewed">{{ card.reviewed }}</text>
-                <text class="detail-link">查看详情 ></text>
+            <view v-for="(card, index) in cards" :key="card.diseaseId" :class="libraryItemClass(index)">
+              <view class="library-swipe-card">
+                <view class="library-delete-btn" @tap="deleteLibraryCard(index)"><text class="library-delete-label">删除</text></view>
+                <view :class="libraryCardClass(index)" :style="'transform: translateX(' + libraryTranslate(index) + 'px);'" @touchstart="libraryTouchStart($event, index)" @touchmove="libraryTouchMove($event, index)" @touchend="libraryTouchEnd($event, index)" @touchcancel="libraryTouchEnd($event, index)">
+                  <view v-if="card.cardType === 'simple_note'" class="simple-note-card" @tap="openCardFocus(card)">
+                    <text class="simple-note-kicker">个人记录</text><text class="simple-note-title">{{ card.title }}</text><view class="simple-note-divider"></view><text class="simple-note-source-label">原始记录</text><text class="simple-note-content">{{ card.sourceContent }}</text>
+                  </view>
+                  <view v-else :class="articleClass(index)" @touchstart="pressCard(index)" @touchend="releaseCard" @touchcancel="releaseCard" @tap="go('/pages/knowledge-detail/index?id=' + card.diseaseId)">
+                    <view class="article-head">
+                      <text class="article-title">{{ card.title }}</text>
+                      <text class="pill">{{ card.dept }}</text>
+                    </view>
+                    <text class="article-summary">{{ card.summary }}</text>
+                    <view class="article-footer">
+                      <text class="reviewed">{{ card.reviewed }}</text>
+                      <text class="detail-link">查看详情 ></text>
+                    </view>
+                  </view>
+                </view>
               </view>
             </view>
           </view>
+          <view v-if="selectedQuickNote != null" class="quick-note-mask" @tap="closeQuickNote">
+            <view class="quick-note-sheet" @tap.stop=""><text class="quick-note-sheet-title">速记卡</text><input class="quick-note-input" v-model="selectedQuickNote.title" placeholder="标题" /><textarea class="quick-note-editor" auto-height="true" v-model="selectedQuickNote.summary" placeholder="记录内容" /><view class="quick-note-actions"><text class="quick-note-save" @tap="saveQuickNoteEdits">保存</text><text class="quick-note-upgrade" @tap="upgradeQuickNote">升级为完整知识卡</text><text class="quick-note-delete" @tap="deleteQuickNote">删除</text></view></view>
+          </view>
         </view>
       </scroll-view>
+      <view v-if="focusedCard != null" class="card-focus-mask" @tap="closeCardFocus">
+        <view class="card-focus-panel" :style="cardFocusStyle(focusedCard)" @tap.stop="">
+          <view class="card-focus-head"><text class="card-focus-kicker">原始记录</text><text class="card-focus-close" @tap="closeCardFocus">×</text></view>
+          <text class="card-focus-title">{{ focusedCard.title }}</text>
+          <scroll-view class="card-focus-scroll" scroll-y="true" :show-scrollbar="false"><text class="card-focus-content">{{ focusedCard.sourceContent }}</text></scroll-view>
+        </view>
+      </view>
       <BottomTabs active="library" />
     </view>
   </view>
 </template>
 
 <script lang="uts">
-import AppHeader from '../../components/AppHeader/AppHeader.uvue'
 import BottomTabs from '../../components/BottomTabs/BottomTabs.uvue'
 import { knowledgeCards } from '../../common/medora-data.uts'
 
 export default {
-  components: { AppHeader, BottomTabs },
+  components: { BottomTabs },
   data() {
     return {
-      cards: knowledgeCards,
+      cards: [] as any[],
       categoryTabs: ['全部', '内科', '外科', '药理'],
       activeCategory: '全部',
       pageReady: false,
-      pressedCard: -1
+      pressedCard: -1,
+      selectedQuickNote: null as any,
+      focusedCard: null as any,
+      librarySwipeStates: [] as any[]
     }
   },
   onReady() {
     setTimeout(() => { this.pageReady = true }, 16)
   },
+  onShow() {
+    this.loadCustomCards()
+  },
   methods: {
+    loadCustomCards() {
+      const custom = this.readStorageList('customKnowledgeCardsJson', 'customKnowledgeCards')
+      const customCards = this.storageList(custom)
+      const rawCards = customCards.concat(knowledgeCards)
+      const storedIds = this.readStorageList('deletedBuiltinKnowledgeCardIdsJson', 'deletedBuiltinKnowledgeCardIds')
+      const deletedIds = this.storageList(storedIds)
+      const normalized = [] as any[]
+      for (let index = 0; index < rawCards.length; index++) {
+        const card = this.normalizeLibraryCard(rawCards[index], index)
+        if (deletedIds.indexOf(card.diseaseId) < 0) normalized.push(card)
+      }
+      this.cards = normalized
+      this.syncLibrarySwipeStates()
+    },
+    storageList(raw: any) {
+      const normalized = raw != null ? JSON.parse(JSON.stringify(raw)) as any : []
+      return Array.isArray(normalized) ? normalized : [] as any[]
+    },
+    readStorageList(jsonKey: string, legacyKey: string) {
+      const serialized = uni.getStorageSync(jsonKey) as string
+      if (serialized != null && serialized !== '') {
+        try {
+          return this.storageList(JSON.parse(serialized))
+        } catch (error) {}
+      }
+      return this.storageList(uni.getStorageSync(legacyKey))
+    },
+    writeStorageList(jsonKey: string, legacyKey: string, list: any[]) {
+      uni.setStorageSync(legacyKey, list)
+      uni.setStorageSync(jsonKey, JSON.stringify(list))
+    },
+    normalizeLibraryCard(raw: any, index: number) {
+      const source = raw != null ? JSON.parse(JSON.stringify(raw)) as any : null
+      const fallbackTitles = ['房颤', '急性阑尾炎', 'ACE 抑制剂', '法洛四联症']
+      const fallbackDepts = ['内科', '外科', '药理', '儿科']
+      const fallbackSummaries = ['评估血栓风险、心室率控制与抗凝适应证。', '右下腹痛、发热与局部腹膜刺激征，影像辅助确认。', '降压、心衰和肾保护常用药，关注咳嗽、高钾和肾功能变化。', '发绀型先天性心脏病，关注缺氧发作和手术时机。']
+      const rawId = source != null && source.diseaseId != null ? source.diseaseId as string : ''
+      const builtInIds = ['atrialFibrillation', 'acuteAppendicitis', 'aceInhibitors', 'tetralogyOfFallot']
+      const builtInIndex = builtInIds.indexOf(rawId)
+      const rawTitle = source != null && source.title != null ? source.title as string : ''
+      const rawSummary = source != null && source.summary != null ? source.summary as string : ''
+      const sourceContent = source != null && source.sourceContent != null ? source.sourceContent as string : ''
+      const titleSeed = sourceContent.trim() !== '' ? sourceContent.trim() : rawSummary.trim()
+      const normalizedTitle = rawTitle === '未命名知识卡' || rawTitle === '未命名临床记录' || rawTitle === '未命名速记' ? '' : rawTitle
+      const title = normalizedTitle.trim() !== '' ? normalizedTitle : (builtInIndex >= 0 ? fallbackTitles[builtInIndex] : (titleSeed !== '' ? titleSeed.substring(0, 28) : '未命名知识卡'))
+      const dept = source != null && source.dept != null && (source.dept as string).trim() !== '' ? source.dept as string : (builtInIndex >= 0 ? fallbackDepts[builtInIndex] : '待分类')
+      const summary = rawSummary.trim() !== '' && rawSummary !== '尚未添加摘要' ? rawSummary : (builtInIndex >= 0 ? fallbackSummaries[builtInIndex] : (sourceContent.trim() !== '' ? sourceContent.substring(0, 60) : '尚未添加摘要'))
+      const tags = source != null && Array.isArray(source.tags) ? source.tags : []
+      return { diseaseId: rawId !== '' ? rawId : 'library_' + index, title: title, dept: dept, summary: summary, reviewed: source != null && source.reviewed != null ? source.reviewed : '学习资料', tags: tags, sourceContent: sourceContent, cardType: source != null && source.cardType != null ? source.cardType : 'clinical_card' }
+    },
     onSearch() {
       uni.showToast({ title: '搜索功能即将上线', icon: 'none' })
     },
     go(url: string) {
       uni.navigateTo({ url: url, animationType: 'fade-in', animationDuration: 360 } as any)
+    },
+    openCardFocus(card: any) { this.focusedCard = card },
+    closeCardFocus() { this.focusedCard = null },
+    cardFocusStyle(card: any) {
+      const content = card != null && card.sourceContent != null ? card.sourceContent as string : ''
+      let height = 280
+      if (content.length > 180) height = 400
+      if (content.length > 420) height = 560
+      return 'height: ' + height + 'px;'
+    },
+    openQuickNote(card: any) { this.selectedQuickNote = card },
+    closeQuickNote() { this.selectedQuickNote = null },
+    saveQuickNotes() {
+      const custom = [] as any[]
+      for (let index = 0; index < this.cards.length; index++) if (this.cards[index].diseaseId != null && (this.cards[index].diseaseId as string).indexOf('custom_') === 0) custom.push(this.cards[index])
+      this.writeStorageList('customKnowledgeCardsJson', 'customKnowledgeCards', custom)
+    },
+    saveQuickNoteEdits() { if (this.selectedQuickNote == null) return; this.saveQuickNotes(); this.closeQuickNote(); this.loadCustomCards(); uni.showToast({ title: '已保存', icon: 'success' }) },
+    upgradeQuickNote() { if (this.selectedQuickNote == null) return; this.selectedQuickNote.cardType = 'clinical_card'; this.saveQuickNotes(); this.closeQuickNote(); this.loadCustomCards(); uni.showToast({ title: '已升级为完整知识卡', icon: 'success' }) },
+    deleteQuickNote() { if (this.selectedQuickNote == null) return; const id = this.selectedQuickNote.diseaseId; let index = -1; for (let itemIndex = 0; itemIndex < this.cards.length; itemIndex++) if (this.cards[itemIndex].diseaseId === id) index = itemIndex; this.closeQuickNote(); if (index >= 0) this.deleteLibraryCard(index) },
+    syncLibrarySwipeStates() {
+      const states = [] as any[]
+      for (let index = 0; index < this.cards.length; index++) states.push({ translateX: 0, animating: false, startX: 0, lastX: 0, lastTime: 0 })
+      this.librarySwipeStates = states
+    },
+    libraryTouchStart(event: any, index: number) {
+      const state = this.librarySwipeStates[index]
+      if (state == null) return
+      for (let itemIndex = 0; itemIndex < this.librarySwipeStates.length; itemIndex++) if (itemIndex !== index) { this.librarySwipeStates[itemIndex].animating = true; this.librarySwipeStates[itemIndex].translateX = 0 }
+      state.animating = false
+      state.startX = event.touches[0].clientX
+      state.lastX = state.startX
+      state.lastTime = Date.now()
+    },
+    libraryTouchMove(event: any, index: number) {
+      const state = this.librarySwipeStates[index]
+      if (state == null) return
+      const currentX = event.touches[0].clientX
+      let distance = state.startX - currentX
+      if (distance > 80) distance = 80 + (distance - 80) * 0.3
+      if (distance < 0) distance = distance * 0.3
+      state.translateX = -distance
+      state.lastX = currentX
+      state.lastTime = Date.now()
+    },
+    libraryTouchEnd(event: any, index: number) {
+      const state = this.librarySwipeStates[index]
+      if (state == null) return
+      state.animating = true
+      const elapsed = Date.now() - state.lastTime
+      const velocity = elapsed > 0 ? Math.abs(state.lastX - state.startX) / elapsed : 0
+      if ((velocity > 0.5 && state.lastX < state.startX) || state.translateX < -42) state.translateX = -80
+      else state.translateX = 0
+    },
+    libraryTranslate(index: number) { const state = this.librarySwipeStates[index]; return state != null ? state.translateX : 0 },
+    libraryCardClass(index: number) { const state = this.librarySwipeStates[index]; return state != null && state.animating ? 'library-card-surface library-card-transition' : 'library-card-surface' },
+    deleteLibraryCard(index: number) {
+      if (index < 0 || index >= this.cards.length) return
+      const card = this.cards[index]
+      const id = card != null && card.diseaseId != null ? card.diseaseId as string : ''
+      if (id.indexOf('custom_') === 0) {
+        const stored = this.readStorageList('customKnowledgeCardsJson', 'customKnowledgeCards')
+        const cards = this.storageList(stored)
+        for (let itemIndex = cards.length - 1; itemIndex >= 0; itemIndex--) {
+          const source = JSON.parse(JSON.stringify(cards[itemIndex])) as any
+          if (source != null && source.diseaseId === id) cards.splice(itemIndex, 1)
+        }
+        this.writeStorageList('customKnowledgeCardsJson', 'customKnowledgeCards', cards)
+      } else if (id !== '') {
+        const storedIds = this.readStorageList('deletedBuiltinKnowledgeCardIdsJson', 'deletedBuiltinKnowledgeCardIds')
+        const deletedIds = this.storageList(storedIds)
+        if (deletedIds.indexOf(id) < 0) deletedIds.push(id)
+        this.writeStorageList('deletedBuiltinKnowledgeCardIdsJson', 'deletedBuiltinKnowledgeCardIds', deletedIds)
+      }
+      this.cards.splice(index, 1)
+      this.syncLibrarySwipeStates()
+      uni.showToast({ title: '已删除', icon: 'success' })
     },
     entryClass(base: string, index: number) {
       let value = base + ' motion-enter'
@@ -59,8 +214,11 @@ export default {
       if (index > 0) value += ' motion-delay-' + index
       return value
     },
+    libraryItemClass(index: number) {
+      return this.entryClass('library-card-item', index + 1)
+    },
     articleClass(index: number) {
-      let value = this.entryClass('article-card card', index + 1)
+      let value = 'article-card card'
       if (this.pressedCard == index) value += ' article-card-pressed'
       return value
     },
@@ -75,11 +233,20 @@ export default {
 </script>
 
 <style scoped>
+.library-header { background-color: #f9f9f8; padding: 16px 24px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.library-brand { color: #334b46; font-size: 32px; line-height: 40px; font-weight: 700; }
+.library-search-hit { width: 40px; height: 40px; border-radius: 20px; display: flex; flex-direction: row; align-items: center; justify-content: center; }
+.search-icon-img { width: 22px; height: 22px; }
 .library-main { padding-top: 12px; }
 .tabs-row { display: flex; flex-direction: row; }
 .cat-tab { margin-right: 8px; }
 .article-list { margin-top: 24px; }
-.article-card { min-height: 160px; margin-bottom: 16px; padding: 18px; }
+.library-swipe-card { position: relative; width: 100%; margin-bottom: 16px; border-radius: 16px; overflow: hidden; }
+.library-delete-btn { position: absolute; top: 0; right: 0; width: 80px; height: 100%; background-color: #ba1a1a; display: flex; flex-direction: row; align-items: center; justify-content: center; z-index: 0; }
+.library-delete-label { color: #ffffff; font-size: 13px; line-height: 20px; font-weight: 700; }
+.library-card-surface { position: relative; z-index: 1; background-color: #ffffff; border-radius: 16px; }
+.library-card-transition { transition-property: transform; transition-duration: 260ms; transition-timing-function: ease-out; }
+.article-card { min-height: 160px; padding: 18px; }
 .article-card-pressed { transform: scale(0.99); opacity: 0.9; }
 .article-head { display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
 .article-title { color: #1a1c1c; font-size: 20px; line-height: 28px; font-weight: 700; }
@@ -87,4 +254,31 @@ export default {
 .article-footer { margin-top: 18px; padding-top: 14px; border-top-width: 1px; border-top-style: solid; border-top-color: #e8e8e8; display: flex; flex-direction: row; justify-content: space-between; }
 .reviewed { color: #717977; font-size: 12px; line-height: 18px; }
 .detail-link { color: #3b5e5b; font-size: 14px; line-height: 18px; font-weight: 700; }
+.quick-note-card { background-color: #f1f5f4; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; }
+.quick-note-kicker { color: #547774; font-size: 11px; line-height: 16px; font-weight: 700; }
+.quick-note-title { margin-top: 4px; color: #294b48; font-size: 15px; line-height: 22px; font-weight: 700; }
+.quick-note-content { margin-top: 4px; color: #414847; font-size: 13px; line-height: 20px; }
+.quick-note-mask { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background-color: rgba(26,28,28,0.28); display: flex; flex-direction: column; justify-content: flex-end; z-index: 10; }
+.quick-note-sheet { background-color: #ffffff; border-top-left-radius: 18px; border-top-right-radius: 18px; padding: 22px 24px 30px; display: flex; flex-direction: column; }
+.quick-note-sheet-title { color: #294b48; font-size: 18px; line-height: 26px; font-weight: 700; }
+.quick-note-input { height: 42px; margin-top: 14px; border-width: 0; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #d8e0de; color: #1a1c1c; font-size: 16px; font-weight: 700; }
+.quick-note-editor { width: 100%; min-height: 72px; margin-top: 12px; border-width: 0; color: #414847; font-size: 14px; line-height: 21px; }
+.quick-note-actions { margin-top: 20px; display: flex; flex-direction: row; justify-content: space-between; }
+.quick-note-save { color: #294b48; font-size: 14px; line-height: 20px; font-weight: 700; }
+.quick-note-upgrade { color: #547774; font-size: 14px; line-height: 20px; font-weight: 700; }
+.quick-note-delete { color: #a34336; font-size: 14px; line-height: 20px; font-weight: 700; }
+.simple-note-card { height: 176px; box-sizing: border-box; background-color: #f1f5f4; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; }
+.simple-note-kicker { color: #547774; font-size: 11px; line-height: 16px; font-weight: 700; }
+.simple-note-title { color: #294b48; font-size: 20px; line-height: 28px; font-weight: 700; margin-top: 4px; }
+.simple-note-divider { height: 1px; margin-top: 8px; background-color: #d8e3e0; }
+.simple-note-source-label { color: #788481; font-size: 10px; line-height: 14px; font-weight: 700; margin-top: 7px; }
+.simple-note-content { height: 40px; overflow: hidden; color: #66716e; font-size: 13px; line-height: 20px; margin-top: 2px; }
+.card-focus-mask { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background-color: rgba(30, 42, 40, 0.42); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 30; opacity: 1; transition-property: opacity; transition-duration: 240ms; transition-timing-function: ease-out; }
+.card-focus-panel { width: 329px; max-height: 620px; box-sizing: border-box; background-color: #f7fbfa; border-radius: 16px; padding: 22px; display: flex; flex-direction: column; transform: scale(1); transition-property: transform; transition-duration: 320ms; transition-timing-function: ease-out; }
+.card-focus-head { display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.card-focus-kicker { color: #547774; font-size: 12px; line-height: 18px; font-weight: 700; }
+.card-focus-close { width: 28px; height: 28px; border-radius: 14px; background-color: #e5edeb; color: #547774; font-size: 20px; line-height: 28px; text-align: center; }
+.card-focus-title { color: #294b48; font-size: 24px; line-height: 34px; font-weight: 700; margin-top: 12px; }
+.card-focus-scroll { flex: 1; margin-top: 14px; }
+.card-focus-content { color: #4e5956; font-size: 16px; line-height: 28px; }
 </style>

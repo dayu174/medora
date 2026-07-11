@@ -54,7 +54,7 @@ export default {
 </script>
 
 <style scoped>
-.tab-icon-active { transform: scale(1.08); opacity: 1; transition-property: transform, opacity; transition-duration: 220ms; transition-timing-function: ease-out; }
-.tab-avatar-active { transform: scale(1.06); opacity: 1; transition-property: transform, opacity; transition-duration: 220ms; transition-timing-function: ease-out; }
+.tab-icon-active { transform: scale(1.04); opacity: 1; transition-property: transform, opacity; transition-duration: 220ms; transition-timing-function: ease-out; }
+.tab-avatar-active { transform: scale(1.04); opacity: 1; transition-property: transform, opacity; transition-duration: 220ms; transition-timing-function: ease-out; }
 .tab-active-indicator { width: 22px; height: 3px; margin-top: 2px; border-radius: 2px; background-color: #3b5e5b; opacity: 0.78; }
 </style>

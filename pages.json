@@ -97,6 +97,20 @@
         "navigationBarTitleText": "个人资料",
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/organize/index",
+      "style": {
+        "navigationBarTitleText": "整理记录",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/organize-tcm/index",
+      "style": {
+        "navigationBarTitleText": "整理记录（中医）",
+        "navigationStyle": "custom"
+      }
     }
   ],
   "globalStyle": {

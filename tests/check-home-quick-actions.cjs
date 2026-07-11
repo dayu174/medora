@@ -35,6 +35,28 @@ if (!/\.quick-icon-img\s*\{[^}]*width:\s*32px/.test(source)) {
   errors.push("home calculator icon must use the larger 32px visual frame");
 }
 
+if (source.includes("@tap=\"go('/pages/record/index')\"")) {
+  errors.push("home start-record action must open the inline composer instead of navigating away");
+}
+
+const inlineComposerRequirements = ["openInlineComposer", "inline-record-card", "v-model=\"inlineRecordContent\"", "onInlineSmartArchive", "saveInlineKnowledgeCard", "quick-grid-composer"];
+for (const requirement of inlineComposerRequirements) {
+  if (!source.includes(requirement)) errors.push(`home inline record composer missing: ${requirement}`);
+}
+
+if (!source.includes("parseArchiveTitle")) {
+  errors.push("home inline record composer must use the title-only AI parser");
+}
+
+const motionRequirements = ["calculatorClass", "recordSummaryClass", "inlineContentClass", "quick-calc-collapsing", "inline-record-content-active"];
+for (const requirement of motionRequirements) {
+  if (!source.includes(requirement)) errors.push(`home inline composer must keep layout mounted for smooth motion: ${requirement}`);
+}
+
+if (source.includes('v-if="!inlineComposerOpen" :class="quickClass(\'calc\')"')) {
+  errors.push("calculator must animate out instead of being removed immediately");
+}
+
 if (errors.length > 0) {
   console.error(errors.join("\n"));
   process.exit(1);

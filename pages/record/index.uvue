@@ -1,21 +1,15 @@
 <template>
   <view class="app-page safe-top">
     <view class="phone-frame">
-      <!-- Header: fixed at top, not scrolling -->
+      <!-- Header -->
       <view class="r-header">
         <view class="back-hit" @tap="goBack">
           <text class="back-icon">‹</text>
         </view>
         <text class="r-title">新建记录</text>
-        <view class="r-header-right">
-          <text class="r-hint">保存后进入待整理</text>
-          <view class="r-save-btn" @tap="saveRecord">
-            <text class="r-save-label">保存</text>
-          </view>
-        </view>
+        <view class="r-header-end"></view>
       </view>
 
-      <!-- Scrollable content area -->
       <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
         <view class="r-main">
           <!-- Input Card -->
@@ -28,64 +22,46 @@
             <text v-if="draftContent.length === 0" class="input-sub-placeholder">
               例如：王老师查房时强调：慢性阻塞性肺疾病患者氧疗目标为维持PaO2≥60mmHg或SpO2≥90%，同时需警惕CO2潴留加重。
             </text>
+
           </view>
 
-          <!-- Action Buttons: 语音 / 图片 / 智能归档 -->
+          <!-- Action Buttons -->
           <view class="action-row">
-            <view class="act-btn" @tap="onVoice">
-              <text class="act-icon">♪</text>
-              <text class="act-label">语音</text>
-            </view>
-            <view class="act-btn" @tap="onImage">
-              <text class="act-icon">◇</text>
-              <text class="act-label">图片</text>
-            </view>
             <view class="act-btn act-smart" @tap="onSmartArchive">
-              <text class="act-icon">✦</text>
-              <text class="act-label">智能归档</text>
+              <image class="act-icon-img" src="/static/icons/smart.png" mode="aspectFit"></image>
+              <text class="act-label act-smart-label">智能归档</text>
             </view>
-          </view>
-
-          <!-- Pending Drafts Section: only shown when there are drafts -->
-          <view v-if="pendingDrafts.length > 0" class="pending-section">
-            <view class="pending-head">
-              <view class="ph-left">
-                <text class="ph-icon">⊞</text>
-                <text class="ph-title">待整理</text>
-              </view>
-              <text class="view-all" @tap="onViewAll">查看全部</text>
-            </view>
-
-            <view class="pending-list">
-              <view v-for="(draft, idx) in pendingDrafts" :key="draft.id" class="pending-card">
-                <view class="pc-top">
-                  <view class="pc-left">
-                    <text class="pc-src">{{ draft.source === 'voice' ? '♪' : '≡' }}</text>
-                    <text class="pc-time">{{ draft.timeLabel }}</text>
-                  </view>
-                  <view class="org-btn" @tap="onOrganize(idx)">
-                    <text class="org-label">整理</text>
-                  </view>
-                </view>
-                <text class="pc-content">{{ draft.content }}</text>
-              </view>
-            </view>
-          </view>
-
-          <!-- Bottom spacing for scroll -->
-          <view style="height: 32px;"></view>
+          </view>          <view style="height: 32px;"></view>
         </view>
       </scroll-view>
+
     </view>
   </view>
 </template>
 
 <script lang="uts">
+import { parseArchiveTitle } from '../../common/archive-payload.uts'
+
+interface SwipeState {
+  translateX: number
+  animating: boolean
+  startX: number
+  lastX: number
+  lastTime: number
+}
+
 export default {
   data() {
     return {
       draftContent: '',
+      swipeStates: [] as SwipeState[],
       nextId: 3,
+      attachedImages: [] as string[],
+      attachedVoice: '',
+      isArchiving: false,
+      isTranscribing: false,
+      archiveFlowState: 'idle',
+      archivePreviewTitle: '',
       pendingDrafts: [
         {
           id: 1,
@@ -102,31 +78,398 @@ export default {
       ]
     }
   },
+  created() {
+    this.syncSwipeStates()
+  },
   methods: {
+    syncSwipeStates() {
+      const arr: SwipeState[] = []
+      for (let i = 0; i < this.pendingDrafts.length; i++) {
+        arr.push({
+          translateX: 0,
+          animating: false,
+          startX: 0,
+          lastX: 0,
+          lastTime: 0
+        })
+      }
+      this.swipeStates = arr
+    },
+    attachVoice(filePath: string) {
+      this.attachedVoice = filePath
+      uni.showToast({ title: '语音已附加', icon: 'success' })
+    },
     goBack() {
       uni.navigateBack()
     },
     onVoice() {
-      uni.showToast({ title: '正在录音...', icon: 'none' })
+      this.showVoiceCapture = !this.showVoiceCapture
+    },
+    onVoiceCaptureProcessing() {
+      this.archivePreviewTitle = ''
+      this.archiveFlowState = 'capturing'
+    },
+    onVoiceCaptured(data: any) {
+      this.showVoiceCapture = false
+      if (data != null && data.filePath != null && data.filePath !== '') {
+        this.attachVoice(data.filePath as string)
+        this.transcribeVoice(data.filePath as string)
+      }
+    },
+    onVoiceCaptureError() {
+      this.archiveFlowState = 'idle'
     },
     onImage() {
-      uni.showToast({ title: '正在打开相册...', icon: 'none' })
+      if (this.attachedImages.length >= 6) {
+        uni.showToast({ title: '最多添加6张图片', icon: 'none' })
+        return
+      }
+      const remain = 6 - this.attachedImages.length
+      uni.chooseImage({
+        count: remain,
+        sizeType: ['compressed'],
+        sourceType: ['album', 'camera'],
+        success: (res: any) => {
+          if (res != null && res.tempFilePaths != null && res.tempFilePaths.length > 0) {
+            for (let i = 0; i < res.tempFilePaths.length; i++) {
+              if (this.attachedImages.length < 6) {
+                this.attachedImages.push(res.tempFilePaths[i])
+              }
+            }
+            uni.showToast({ title: '已添加 ' + res.tempFilePaths.length + ' 张图片', icon: 'success' })
+          }
+        },
+        fail: () => {
+          uni.showToast({ title: '无法访问相册', icon: 'none' })
+        }
+      })
+    },
+    removeImage(index: number) {
+      this.attachedImages.splice(index, 1)
+    },
+    removeVoice() {
+      this.attachedVoice = ''
+    },
+    playVoice() {
+      if (this.attachedVoice === '') return
+      uni.showToast({ title: '播放语音...', icon: 'none' })
     },
     onSmartArchive() {
-      uni.showToast({ title: '智能归档分析中...', icon: 'none' })
+      this.requestSmartArchive(this.draftContent, -1, 'composer')
+    },
+    requestSmartArchive(content: string, draftIndex: number, sourceMode: string) {
+      const BAILIAN_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
+      const BAILIAN_MODEL = 'qwen-plus'
+      const apiKey = uni.getStorageSync('smartArchiveApiKey') as string
+      if (apiKey == null || apiKey == '') {
+        uni.showModal({
+          title: '未配置 API Key',
+          content: '请先前往设置页面填入阿里云百炼 API Key',
+          confirmText: '去设置',
+          success: (res) => {
+            if (res.confirm) {
+              uni.navigateTo({ url: '/pages/settings/index' })
+            }
+          }
+        })
+        return
+      }
+      if (content.trim().length === 0) {
+        uni.showToast({ title: '请先输入内容', icon: 'none' })
+        return
+      }
+      this.isArchiving = true
+      this.archivePreviewTitle = content.split('\n')[0].substring(0, 24)
+      this.archiveFlowState = 'structuring'
+      uni.showLoading({ title: '正在归档...' })
+      uni.request({
+        url: BAILIAN_URL,
+        method: 'POST',
+        header: {
+          'Authorization': 'Bearer ' + apiKey,
+          'Content-Type': 'application/json'
+        },
+        data: {
+          model: BAILIAN_MODEL,
+          temperature: 0.1,
+          messages: [
+            { role: 'system', content: '你是医学学习笔记的标题生成器。只根据用户原文生成一个准确、简洁的中文标题，不得补充、改写、解释任何医学内容，不得生成诊断、用药建议、数字、标签或分类。标题不超过18个汉字。仅输出合法 JSON：{"title":""}，不要 Markdown。' },
+            { role: 'user', content: content }
+          ]
+        },
+        success: (res: any) => {
+          uni.hideLoading()
+          this.isArchiving = false
+          if (res != null && res.statusCode === 200 && res.data != null && res.data.choices != null && res.data.choices.length > 0) {
+            const result = res.data.choices[0].message.content as string
+            const aiTitle = parseArchiveTitle(result)
+            this.archiveFlowState = 'ready'
+            this.saveSimpleKnowledgeCard(aiTitle, content, draftIndex, sourceMode)
+          } else if (res != null && res.data != null && res.data.error != null) {
+            this.archiveFlowState = 'idle'
+            const errMsg = res.data.error.message != null ? res.data.error.message as string : '未知错误'
+            const errCode = res.data.error.code != null ? ('[' + res.data.error.code + '] ') : ''
+            uni.showToast({ title: errCode + errMsg, icon: 'none' })
+          } else {
+            this.archiveFlowState = 'idle'
+            uni.showToast({ title: '归档失败，状态码：' + (res != null ? res.statusCode : '无响应'), icon: 'none' })
+          }
+        },
+        fail: (err: any) => {
+          uni.hideLoading()
+          this.isArchiving = false
+          this.archiveFlowState = 'idle'
+          uni.showToast({ title: '网络请求失败，请检查接口地址', icon: 'none' })
+        }
+      })
+    },
+    storageList(raw: any) {
+      const normalized = raw != null ? JSON.parse(JSON.stringify(raw)) as any : []
+      return Array.isArray(normalized) ? normalized : [] as any[]
+    },
+    readStorageList(jsonKey: string, legacyKey: string) {
+      const serialized = uni.getStorageSync(jsonKey) as string
+      if (serialized != null && serialized !== '') {
+        try {
+          return this.storageList(JSON.parse(serialized))
+        } catch (error) {}
+      }
+      return this.storageList(uni.getStorageSync(legacyKey))
+    },
+    writeStorageList(jsonKey: string, legacyKey: string, list: any[]) {
+      uni.setStorageSync(legacyKey, list)
+      uni.setStorageSync(jsonKey, JSON.stringify(list))
+    },
+    saveSimpleKnowledgeCard(aiTitle: string, sourceContent: string, draftIndex: number, sourceMode: string) {
+      const firstLine = sourceContent.split('\n')[0] != null ? sourceContent.split('\n')[0].trim() : ''
+      const title = aiTitle != null && aiTitle.trim() !== '' ? aiTitle.trim() : (firstLine !== '' ? firstLine.substring(0, 18) : '未命名知识卡')
+      const id = 'custom_' + Date.now()
+      const stored = this.readStorageList('customKnowledgeCardsJson', 'customKnowledgeCards')
+      const cards = this.storageList(stored)
+      const card = { diseaseId: id, title: title, dept: '未分类', summary: sourceContent, reviewed: '刚刚归档', tags: [] as string[], sourceContent: sourceContent, cardType: 'simple_note' }
+      cards.unshift(card)
+      this.writeStorageList('customKnowledgeCardsJson', 'customKnowledgeCards', cards)
+      const storedRecent = this.readStorageList('homeRecentRecordsJson', 'homeRecentRecords')
+      const recentRecords = this.storageList(storedRecent)
+      const recentRecord = { id: id, diseaseId: id, title: title, dept: '未分类', summary: sourceContent, reviewed: '刚刚归档', tags: [] as string[], sourceContent: sourceContent, cardType: 'simple_note' }
+      recentRecords.unshift(recentRecord)
+      if (recentRecords.length > 10) recentRecords.splice(10, recentRecords.length - 10)
+      this.writeStorageList('homeRecentRecordsJson', 'homeRecentRecords', recentRecords)
+      if (draftIndex >= 0 && draftIndex < this.pendingDrafts.length) { this.pendingDrafts.splice(draftIndex, 1); this.syncSwipeStates() }
+      if (sourceMode === 'composer') { this.draftContent = ''; this.attachedImages = []; this.attachedVoice = '' }
+      uni.showToast({ title: '已归档', icon: 'success' })
+      uni.navigateTo({ url: '/pages/library/index', animationType: 'fade-in', animationDuration: 360 } as any)
+    },
+    getOriginalRecord(customFields: any[]) {
+      if (customFields == null || !Array.isArray(customFields)) return ''
+      for (let index = 0; index < customFields.length; index++) {
+        const field = customFields[index]
+        if (field != null && field.name != null && (field.name as string).indexOf('原始记录') >= 0 && field.value != null) return field.value as string
+      }
+      return ''
+    },
+    handleOrganizeDone(data: any) {
+      if (data == null) return
+      const idx = data.draftIndex as number
+      if (idx >= 0 && idx < this.pendingDrafts.length) {
+        this.pendingDrafts.splice(idx, 1)
+        this.syncSwipeStates()
+      }
+      if (data.archiveKey != null && data.archiveKey !== '') {
+        uni.removeStorageSync('archivePayload_' + data.archiveKey)
+      }
+      if (data.sourceMode === 'composer') {
+        this.draftContent = ''
+        this.attachedImages = []
+        this.attachedVoice = ''
+      }
+      const customCards = this.readStorageList('customKnowledgeCardsJson', 'customKnowledgeCards')
+      const list = this.storageList(customCards)
+      const customId = 'custom_' + Date.now()
+      const sourceContent = this.getOriginalRecord(data.customFields)
+      const firstLine = sourceContent.split('\n')[0] != null ? sourceContent.split('\n')[0].trim() : ''
+      const rawTitle = data.title != null ? data.title as string : ''
+      const rawSummary = data.points != null && data.points !== '' ? data.points as string : (data.diagnosis != null ? data.diagnosis as string : '')
+      const rawDept = data.dept != null ? data.dept as string : ''
+      const title = rawTitle.trim() !== '' ? rawTitle : (firstLine !== '' ? firstLine.substring(0, 28) : '未命名临床记录')
+      const summary = rawSummary.trim() !== '' ? rawSummary : (sourceContent.trim() !== '' ? sourceContent.substring(0, 60) : '尚未添加摘要')
+      const dept = rawDept.trim() !== '' ? rawDept : '待分类'
+      const tags = data.tags != null && Array.isArray(data.tags) && data.tags.length > 0 ? data.tags : ['临床笔记']
+      list.unshift({
+        title: title,
+        dept: dept,
+        summary: summary,
+        reviewed: '刚刚整理',
+        diseaseId: customId,
+        tags: tags,
+        attachments: data.referenceImages,
+        sourceContent: sourceContent
+      })
+      this.writeStorageList('customKnowledgeCardsJson', 'customKnowledgeCards', list)
+      const homeRecent = this.readStorageList('homeRecentRecordsJson', 'homeRecentRecords')
+      const recentList = this.storageList(homeRecent)
+      recentList.unshift({ id: customId, title: title, dept: dept, summary: summary, reviewed: '刚刚整理', diseaseId: customId, tags: tags, sourceContent: sourceContent })
+      if (recentList.length > 10) recentList.splice(10, recentList.length - 10)
+      this.writeStorageList('homeRecentRecordsJson', 'homeRecentRecords', recentList)
+      uni.showToast({ title: '已加入知识库', icon: 'success' })
+    },
+    transcribeVoice(filePath: string) {
+      const uploadEndpoint = uni.getStorageSync('voiceUploadEndpoint') as string
+      const apiKey = uni.getStorageSync('smartArchiveApiKey') as string
+      if (uploadEndpoint == null || uploadEndpoint === '') {
+        uni.showToast({ title: '录音已保存，配置语音服务后可自动转写', icon: 'none' })
+        return
+      }
+      if (apiKey == null || apiKey === '') {
+        uni.showToast({ title: '请先在设置中配置 API Key', icon: 'none' })
+        return
+      }
+      this.isTranscribing = true
+      uni.showLoading({ title: '正在转写...' })
+      uni.uploadFile({
+        url: uploadEndpoint + '/v1/media/audio',
+        filePath: filePath,
+        name: 'audio',
+        success: (uploadRes: any) => {
+          let uploadData: any = null
+          try { uploadData = JSON.parse(uploadRes.data) } catch (error) { uploadData = null }
+          if (uploadRes.statusCode !== 200 || uploadData == null || uploadData.url == null) {
+            this.isTranscribing = false
+            uni.hideLoading()
+            this.archiveFlowState = 'idle'
+            uni.showToast({ title: '音频上传失败，可稍后重试', icon: 'none' })
+            return
+          }
+          uni.request({
+            url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+            method: 'POST',
+            header: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+            data: {
+              model: 'qwen3-asr-flash',
+              messages: [{ role: 'user', content: [{ type: 'input_audio', input_audio: { data: uploadData.url } }] }]
+            },
+            success: (asrRes: any) => {
+              this.isTranscribing = false
+              uni.hideLoading()
+              const choices = asrRes != null && asrRes.data != null ? asrRes.data.choices : null
+              if (asrRes.statusCode === 200 && choices != null && choices.length > 0 && choices[0].message != null) {
+                const transcript = choices[0].message.content as string
+                if (transcript != null && transcript.trim() !== '') {
+                  this.draftContent = this.draftContent === '' ? transcript : this.draftContent + '\n' + transcript
+                  this.archiveFlowState = 'ready'
+                  uni.showToast({ title: '已转写到输入框', icon: 'success' })
+                  return
+                }
+              }
+              uni.showToast({ title: '转写失败，可保留录音后重试', icon: 'none' })
+              this.archiveFlowState = 'idle'
+            },
+            fail: () => {
+              this.isTranscribing = false
+              uni.hideLoading()
+              this.archiveFlowState = 'idle'
+              uni.showToast({ title: '转写请求失败，可稍后重试', icon: 'none' })
+            }
+          })
+        },
+        fail: () => {
+          this.isTranscribing = false
+          uni.hideLoading()
+          this.archiveFlowState = 'idle'
+          uni.showToast({ title: '音频上传失败，可稍后重试', icon: 'none' })
+        }
+      })
     },
     onViewAll() {
       uni.showToast({ title: '查看全部待整理记录', icon: 'none' })
     },
     onOrganize(index: number) {
       const draft = this.pendingDrafts[index]
-      if (draft != null) {
-        uni.showToast({ title: '整理：' + draft.content.substring(0, 10) + '...', icon: 'none' })
+      if (draft == null) return
+      const self = this
+      uni.navigateTo({
+        url: '/pages/organize/index?draftIndex=' + index + '&sourceMode=draft&content=' + encodeURIComponent(draft.content),
+        events: {
+          organizeDone: (data: any) => { self.handleOrganizeDone(data) }
+        }
+      })
+    },
+    tsStart(e: any, index: number) {
+      const st = this.swipeStates[index]
+      if (st == null) return
+      // Close other open cards
+      for (let i = 0; i < this.swipeStates.length; i++) {
+        if (i !== index) {
+          const other = this.swipeStates[i]
+          if (other != null && other.translateX !== 0) {
+            other.animating = true
+            other.translateX = 0
+          }
+        }
+      }
+      // Turn off animation during drag
+      st.animating = false
+      st.startX = e.touches[0].clientX
+      st.lastX = st.startX
+      st.lastTime = Date.now()
+    },
+    tsMove(e: any, index: number) {
+      const st = this.swipeStates[index]
+      if (st == null) return
+      const now = Date.now()
+      const curX = e.touches[0].clientX
+      const diff = st.startX - curX
+      // Rubber band: beyond 80px, add resistance
+      let tx = diff
+      if (diff > 80) {
+        tx = 80 + (diff - 80) * 0.3
+      }
+      // Don't allow right swipe beyond 0
+      if (tx < 0) {
+        tx = tx * 0.3
+      }
+      st.translateX = -tx
+      st.lastX = curX
+      st.lastTime = now
+    },
+    tsEnd(e: any, index: number) {
+      const st = this.swipeStates[index]
+      if (st == null) return
+      st.animating = true
+      // Calculate velocity (px/ms)
+      const dt = Date.now() - st.lastTime
+      const dx = st.lastX - st.startX
+      const velocity = dt > 0 ? Math.abs(dx) / dt : 0
+      // Decide: open if dragged > 40px OR fast swipe left
+      const isLeft = dx < 0
+      const currentOpen = st.translateX < -20
+      // Fast swipe left → open, fast swipe right → close
+      if (velocity > 0.5 && isLeft) {
+        st.translateX = -80
+      } else if (velocity > 0.5 && !isLeft) {
+        st.translateX = 0
+      } else if (st.translateX < -50) {
+        st.translateX = -80
+      } else {
+        st.translateX = 0
       }
     },
+    confirmDelete(index: number) {
+      uni.showModal({
+        title: '删除记录',
+        content: '确定要删除这条待整理记录吗？',
+        success: (res) => {
+          if (res.confirm) {
+            this.pendingDrafts.splice(index, 1)
+            this.syncSwipeStates()
+            uni.showToast({ title: '已删除', icon: 'success' })
+          }
+        }
+      })
+    },
     saveRecord() {
-      if (this.draftContent.length === 0) {
-        uni.showToast({ title: '请先输入内容再保存', icon: 'none' })
+      if (this.draftContent.length === 0 && this.attachedImages.length === 0 && this.attachedVoice === '') {
+        uni.showToast({ title: '请先输入内容或添加附件', icon: 'none' })
         return
       }
       const now = new Date()
@@ -136,14 +479,25 @@ export default {
       const h12 = h % 12 === 0 ? 12 : h % 12
       const mm = m < 10 ? '0' + m : m
       const timeLabel = '今天 ' + h12 + ':' + mm + ' ' + ampm
+      // Build content with attachments summary
+      let content = this.draftContent
+      if (this.attachedVoice !== '') {
+        content = content + (content !== '' ? '\n' : '') + '[语音]'
+      }
+      if (this.attachedImages.length > 0) {
+        content = content + (content !== '' ? '\n' : '') + '[图片 x' + this.attachedImages.length + ']'
+      }
       this.pendingDrafts.push({
         id: this.nextId,
-        content: this.draftContent,
+        content: content,
         timeLabel: timeLabel,
         source: 'text'
       })
       this.nextId++
       this.draftContent = ''
+      this.attachedImages = []
+      this.attachedVoice = ''
+      this.syncSwipeStates()
       uni.showToast({ title: '已保存到待整理', icon: 'success' })
     }
   }
@@ -152,14 +506,12 @@ export default {
 
 <style scoped>
 /*
- * ===== 新建记录页面 - 极简/待整理集成版 =====
- * Stitch Design: 201-极简纯净版 / 202-待整理集成版
+ * ===== 新建记录页面 =====
  * 屏幕: iPhone 16 Pro (393x852)
- * 可用宽度: 393 - 24*2(container-margin) = 345px
+ * 可用宽度: 345px
  */
 
 /* ===== Header ===== */
-/* Stitch: bg-surface, flex items-center justify-between, px-container-margin, h-16, shrink-0, border-b */
 .r-header {
   height: 64px;
   padding: 0 24px;
@@ -173,7 +525,6 @@ export default {
   justify-content: space-between;
   flex-shrink: 0;
 }
-/* Back arrow: 36x44 hit area */
 .back-hit {
   width: 36px;
   height: 44px;
@@ -187,22 +538,22 @@ export default {
   font-size: 24px;
   line-height: 28px;
 }
-/* Title: font-headline-md, 18px, semibold, text-on-surface */
 .r-title {
   color: #1a1c1c;
   font-size: 18px;
   line-height: 32px;
   font-weight: 600;
-  flex: 1;
-  text-align: center;
+  margin-left: 4px;
 }
-/* Right area: flex row, items center */
+.r-header-spacer {
+  flex: 1;
+}
+.r-header-end { width: 36px; height: 44px; }
 .r-header-right {
   display: flex;
   flex-direction: row;
   align-items: center;
 }
-/* Hint text: 10px, text-outline, tracking-wide, font-medium */
 .r-hint {
   color: #717977;
   font-size: 10px;
@@ -210,7 +561,6 @@ export default {
   font-weight: 500;
   margin-right: 12px;
 }
-/* Save button: bg-brand(#547774), rounded-full, text-white */
 .r-save-btn {
   padding: 6px 20px;
   border-radius: 999px;
@@ -227,13 +577,12 @@ export default {
   font-weight: 500;
 }
 
-/* ===== Main Content ===== */
+/* ===== Main ===== */
 .r-main {
   padding: 24px 24px 0;
 }
 
 /* ===== Input Card ===== */
-/* Stitch: bg-white, h-[280px], rounded-3xl(24px), pt-4(16px) px-6(24px) pb-6(24px), border, shadow */
 .input-card {
   position: relative;
   width: 100%;
@@ -245,10 +594,9 @@ export default {
   border-style: solid;
   border-color: #f4f3f3;
 }
-/* Textarea: full fill, transparent, no border, font-body-lg(18/28/400) */
 .input-ta {
   width: 100%;
-  height: 100%;
+  height: 140px;
   background-color: transparent;
   border-width: 0;
   color: #1a1c1c;
@@ -258,13 +606,12 @@ export default {
   padding: 0;
   margin: 0;
 }
-/* Sub-placeholder: ghost text below main placeholder */
 .input-sub-placeholder {
   position: absolute;
   top: 24px;
   left: 24px;
   margin-top: 32px;
-  max-width: 85%;
+  max-width: 260px;
   color: rgba(113, 121, 119, 0.5);
   font-size: 14px;
   line-height: 20px;
@@ -272,15 +619,86 @@ export default {
   pointer-events: none;
 }
 
+/* ===== Voice Attachment ===== */
+.attach-voice {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 8px 12px;
+  margin-top: 8px;
+  background-color: rgba(84, 119, 116, 0.08);
+  border-radius: 8px;
+}
+.attach-voice-icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+}
+.attach-voice-label {
+  flex: 1;
+  font-size: 14px;
+  line-height: 20px;
+  color: #547774;
+  font-weight: 500;
+}
+.attach-remove {
+  width: 20px;
+  height: 20px;
+  color: #717977;
+  font-size: 16px;
+  line-height: 20px;
+  text-align: center;
+}
+
+/* ===== Image Gallery ===== */
+.img-gallery {
+  width: 100%;
+  margin-top: 8px;
+  height: 84px;
+}
+.img-gallery-inner {
+  display: flex;
+  flex-direction: row;
+  padding-right: 8px;
+}
+.img-thumb-wrap {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+.img-thumb {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+}
+.img-delete {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+.img-delete-x {
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 18px;
+}
+
 /* ===== Action Buttons ===== */
-/* Stitch: flex row, gap-3(12px), mt-4 */
 .action-row {
   display: flex;
   flex-direction: row;
   margin-top: 16px;
   width: 100%;
 }
-/* Common: flex-1, bg-white, rounded-2xl(16px), border, flex center, px-4 py-3 */
 .act-btn {
   flex: 1;
   display: flex;
@@ -294,19 +712,17 @@ export default {
   border-style: solid;
   border-color: #f4f3f3;
 }
-.act-btn + .act-btn {
+.act-btn-spaced {
   margin-left: 12px;
 }
-/* Smart archive: flex-[1.5], bg-brand/10, border-brand/20 */
 .act-smart {
   flex: 1.5;
   background-color: rgba(84, 119, 116, 0.1);
   border-color: rgba(84, 119, 116, 0.2);
 }
-.act-icon {
-  font-size: 20px;
-  line-height: 24px;
-  color: #547774;
+.act-icon-img {
+  width: 24px;
+  height: 24px;
   margin-right: 8px;
 }
 .act-label {
@@ -315,21 +731,16 @@ export default {
   font-weight: 500;
   color: #414847;
 }
-.act-smart .act-icon {
-  color: #547774;
-}
-.act-smart .act-label {
+.act-smart-label {
   color: #547774;
 }
 
-/* ===== Pending Drafts Section ===== */
-/* Stitch: mt-6(24px) from actions, flex-col, gap-4(16px) */
+/* ===== Pending Section ===== */
 .pending-section {
   margin-top: 32px;
   display: flex;
   flex-direction: column;
 }
-/* Header: flex, items-center, justify-between */
 .pending-head {
   display: flex;
   flex-direction: row;
@@ -342,10 +753,9 @@ export default {
   flex-direction: row;
   align-items: center;
 }
-.ph-icon {
-  font-size: 18px;
-  line-height: 24px;
-  color: rgba(113, 121, 119, 0.6);
+.ph-icon-img {
+  width: 18px;
+  height: 18px;
 }
 .ph-title {
   font-size: 16px;
@@ -354,7 +764,6 @@ export default {
   font-weight: 600;
   margin-left: 8px;
 }
-/* "查看全部": text-brand, font-body-sm, font-medium */
 .view-all {
   font-size: 14px;
   line-height: 20px;
@@ -362,40 +771,69 @@ export default {
   color: #547774;
 }
 
-/* ===== Pending Cards ===== */
-/* Stitch: bg-white, p-4(16px), rounded-2xl(16px), border, shadow, flex-col, gap-2(8px) */
-.pending-list {
+/* ===== Swipe Card ===== */
+.pending-swipe-card {
+  position: relative;
+  width: 100%;
+  margin-bottom: 12px;
+  border-radius: 16px;
+  overflow: hidden;
+}
+.delete-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 80px;
+  height: 100%;
+  background-color: #ba1a1a;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
-.pending-card {
+.delete-icon {
+  font-size: 20px;
+  line-height: 24px;
+}
+.delete-label {
+  font-size: 12px;
+  line-height: 16px;
+  color: #ffffff;
+  font-weight: 500;
+  margin-top: 2px;
+}
+/* Card content: border-radius handled by parent overflow:hidden */
+.card-content {
+  position: relative;
+  z-index: 1;
   background-color: #ffffff;
   padding: 16px;
-  border-radius: 16px;
   border-width: 1px;
   border-style: solid;
   border-color: #f4f3f3;
   display: flex;
   flex-direction: column;
-  margin-bottom: 12px;
 }
-/* Top row: flex, justify-between, items-start */
+/* Only add transition when animating flag is set */
+.card-transition {
+  transition-property: transform;
+  transition-duration: 0.3s;
+  transition-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1.0);
+}
 .pc-top {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
   justify-content: space-between;
 }
-/* Left: flex row, gap-2 items-center */
 .pc-left {
   display: flex;
   flex-direction: row;
   align-items: center;
 }
-.pc-src {
-  font-size: 16px;
-  line-height: 20px;
-  color: #547774;
+.pc-src-img {
+  width: 16px;
+  height: 16px;
 }
 .pc-time {
   font-size: 12px;
@@ -404,7 +842,6 @@ export default {
   color: #717977;
   margin-left: 8px;
 }
-/* "整理" button: text-brand, font-semibold, px-3 py-1 rounded-full bg-brand/10 */
 .org-btn {
   padding: 4px 12px;
   border-radius: 999px;
@@ -420,7 +857,6 @@ export default {
   font-weight: 600;
   color: #547774;
 }
-/* Content: font-body-sm, text-on-surface-variant, line-clamp-2 */
 .pc-content {
   margin-top: 8px;
   font-size: 14px;
@@ -428,4 +864,23 @@ export default {
   font-weight: 400;
   color: #414847;
 }
+.route-mask {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background-color: rgba(26, 28, 28, 0.32);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  z-index: 20;
+}
+.route-sheet { background-color: #ffffff; border-top-left-radius: 20px; border-top-right-radius: 20px; padding: 24px; display: flex; flex-direction: column; }
+.route-title { color: #1a1c1c; font-size: 19px; line-height: 28px; font-weight: 700; }
+.route-copy { color: #717977; font-size: 13px; line-height: 20px; margin-top: 6px; margin-bottom: 18px; }
+.route-choice { border-width: 1px; border-style: solid; border-color: #d7dfdd; border-radius: 12px; padding: 14px; margin-bottom: 10px; display: flex; flex-direction: column; }
+.route-choice-title { color: #294b48; font-size: 16px; line-height: 24px; font-weight: 700; }
+.route-choice-copy { color: #717977; font-size: 12px; line-height: 18px; margin-top: 2px; }
+.route-cancel { color: #717977; font-size: 15px; line-height: 24px; text-align: center; margin-top: 8px; padding-top: 8px; padding-bottom: 8px; }
 </style>

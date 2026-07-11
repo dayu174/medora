@@ -1,0 +1,11 @@
+{
+  "name": "medora-audio-upload",
+  "private": true,
+  "type": "module",
+  "main": "src/index.mjs",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "ali-oss": "^6.23.0",
+    "busboy": "^1.6.0"
+  }
+}

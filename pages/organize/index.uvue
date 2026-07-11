@@ -1,0 +1,351 @@
+<template>
+  <view class="app-page safe-top">
+    <view class="phone-frame">
+      <view class="clinical-header">
+        <view class="clinical-back-hit" @tap="goBack"><text class="clinical-back-icon">‹</text></view>
+        <text class="clinical-title">整理记录（临床）</text>
+        <text class="clinical-done" @tap="onDone">完成</text>
+      </view>
+
+      <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
+        <view class="clinical-main">
+          <view class="original-summary" @tap="toggleOriginalRecord">
+            <view class="original-summary-copy">
+              <text class="original-summary-title">原始记录</text>
+              <text class="original-summary-meta">{{ originalContent.length }} 字 · {{ referenceImages.length }} 项资料</text>
+            </view>
+            <text class="original-summary-action">{{ showOriginalRecord ? '收起' : '展开' }}</text>
+          </view>
+
+          <view v-if="showOriginalRecord" class="original-editor-card">
+            <textarea class="source-editor" auto-height="true" v-model="originalContent" placeholder="补充或删减原始记录..." />
+            <view class="reference-media-head">
+              <text class="reference-media-title">原始资料</text>
+              <text class="reference-media-add" @tap="addReferenceImages">添加</text>
+            </view>
+            <scroll-view v-if="referenceImages.length > 0" class="reference-media-scroll" scroll-x="true" :show-scrollbar="false">
+              <view class="reference-media-row">
+                <view v-for="(image, index) in referenceImages" :key="index" v-if="index < 3" class="reference-media-item" @tap="previewReferenceImage(index)">
+                  <image class="reference-media-image" :src="image" mode="aspectFill"></image>
+                  <text class="reference-media-delete" @tap.stop="removeReferenceImage(index)">×</text>
+                </view>
+                <view v-if="referenceImages.length > 3" class="reference-media-more" @tap="previewReferenceImage(3)">
+                  <text class="reference-media-more-count">+{{ referenceImages.length - 3 }}</text>
+                  <text class="reference-media-more-copy">查看全部</text>
+                </view>
+              </view>
+            </scroll-view>
+            <view v-else class="reference-empty" @tap="addReferenceImages"><text class="reference-empty-copy">添加原始图片以便核对</text></view>
+          </view>
+
+          <view class="plan-head"><text class="plan-title">治疗方案</text></view>
+          <view class="plan-summary-card">
+            <text class="plan-summary-copy">{{ treatmentGoals.length }} 个治疗目标 · {{ medicationCount() }} 项用药 · {{ reviewMilestones.length }} 个复评节点</text>
+          </view>
+
+          <view v-for="(goal, goalIndex) in treatmentGoals" :key="goalIndex" class="goal-card">
+            <view class="goal-head" @tap="toggleGoal(goalIndex)">
+              <view class="goal-head-copy">
+                <text class="goal-index">目标 {{ goalIndex + 1 }}</text>
+                <text class="goal-name-preview">{{ goal.name === '' ? '未命名治疗目标' : goal.name }}</text>
+              </view>
+              <text class="goal-toggle">{{ goal.expanded ? '收起' : '展开' }}</text>
+            </view>
+
+            <view v-if="goal.expanded" class="goal-editor">
+              <text class="field-caption">治疗目标</text>
+              <input class="goal-name-input" v-model="goal.name" placeholder="例如：控制感染" />
+
+              <text class="field-caption goal-field-caption">机制 / 临床依据</text>
+              <textarea class="compact-editor" auto-height="true" v-model="goal.mechanism" placeholder="为什么需要这项治疗..." />
+
+              <view class="subsection-head">
+                <text class="subsection-title">药物</text>
+                <text class="subsection-action" @tap="addMedication(goalIndex)">+ 添加药物</text>
+              </view>
+              <view v-for="(medicine, medicineIndex) in goal.medications" :key="medicineIndex" class="medicine-card">
+                <view class="medicine-top-row">
+                  <input class="medicine-name-input" v-model="medicine.name" placeholder="药物名称" />
+                  <text class="medicine-remove" @tap="removeMedication(goalIndex, medicineIndex)">×</text>
+                </view>
+                <view class="medicine-detail-row">
+                  <input class="medicine-detail-input medicine-dose" v-model="medicine.dose" placeholder="剂量" />
+                  <input class="medicine-detail-input medicine-route" v-model="medicine.route" placeholder="途径" />
+                  <input class="medicine-detail-input medicine-frequency" v-model="medicine.frequency" placeholder="频次" />
+                </view>
+                <input class="medicine-course-input" v-model="medicine.course" placeholder="疗程 / 调整条件（可选）" />
+                <input class="medicine-risk-input" v-model="medicine.risk" placeholder="风险 / 注意：肾功能、过敏、相互作用等" />
+              </view>
+              <view v-if="goal.medications.length === 0" class="empty-inline" @tap="addMedication(goalIndex)"><text class="empty-inline-copy">添加第一项用药</text></view>
+
+              <view class="subsection-head non-drug-head">
+                <text class="subsection-title">非药物处置</text>
+                <text class="subsection-action" @tap="addNonDrugAction(goalIndex)">+ 添加</text>
+              </view>
+              <view v-for="(action, actionIndex) in goal.nonDrugActions" :key="actionIndex" class="non-drug-row">
+                <textarea class="non-drug-input" auto-height="true" v-model="goal.nonDrugActions[actionIndex]" placeholder="例如：氧疗、液体管理、健康教育..." />
+                <text class="non-drug-remove" @tap="removeNonDrugAction(goalIndex, actionIndex)">×</text>
+              </view>
+              <view v-if="goal.nonDrugActions.length === 0" class="empty-inline" @tap="addNonDrugAction(goalIndex)"><text class="empty-inline-copy">添加非药物处置</text></view>
+
+              <text class="goal-remove" @tap="removeTreatmentGoal(goalIndex)">删除该治疗目标</text>
+            </view>
+          </view>
+
+          <view class="add-goal" @tap="addTreatmentGoal"><text class="add-goal-copy">+ 添加治疗目标 / 机制分组</text></view>
+
+          <view class="monitoring-card" @tap="toggleMonitoring">
+            <view class="monitoring-head">
+              <view class="monitoring-copy">
+                <text class="monitoring-title">监测与复评</text>
+                <text class="monitoring-meta">{{ monitoringItems.length }} 项监测 · {{ reviewMilestones.length }} 个复评节点</text>
+              </view>
+              <text class="monitoring-action">{{ showMonitoring ? '收起' : '展开' }}</text>
+            </view>
+            <view v-if="showMonitoring" class="monitoring-editor" @tap.stop="">
+              <view class="subsection-head"><text class="subsection-title">监测项目</text><text class="subsection-action" @tap="addMonitoring">+ 添加</text></view>
+              <view v-for="(item, index) in monitoringItems" :key="index" class="monitoring-row">
+                <input class="monitoring-name" v-model="item.name" placeholder="监测指标" />
+                <input class="monitoring-value" v-model="item.frequency" placeholder="频次 / 目标" />
+                <text class="monitoring-remove" @tap="removeMonitoring(index)">×</text>
+              </view>
+              <view v-if="monitoringItems.length === 0" class="empty-inline" @tap="addMonitoring"><text class="empty-inline-copy">添加监测指标</text></view>
+
+              <view class="subsection-head review-head"><text class="subsection-title">复评节点</text><text class="subsection-action" @tap="addReviewMilestone">+ 添加</text></view>
+              <view v-for="(milestone, index) in reviewMilestones" :key="index" class="review-row">
+                <input class="review-time" v-model="milestone.time" placeholder="时间点" />
+                <input class="review-content" v-model="milestone.content" placeholder="复评内容 / 升级条件" />
+                <text class="monitoring-remove" @tap="removeReviewMilestone(index)">×</text>
+              </view>
+              <view v-if="reviewMilestones.length === 0" class="empty-inline" @tap="addReviewMilestone"><text class="empty-inline-copy">添加复评节点</text></view>
+            </view>
+          </view>
+
+          <view class="clinical-notes-card" @tap="toggleClinicalNotes">
+            <view class="notes-head"><text class="notes-title">临床要点与诊断思路</text><text class="monitoring-action">{{ showClinicalNotes ? '收起' : '展开' }}</text></view>
+            <view v-if="showClinicalNotes" class="notes-editor" @tap.stop="">
+              <text class="field-caption">知识标题</text>
+              <input class="notes-title-input" v-model="recordTitle" placeholder="输入简明的知识标题..." />
+              <text class="field-caption notes-caption">临床要点</text>
+              <textarea class="notes-textarea" auto-height="true" v-model="clinicalPoints" placeholder="提炼核心临床表现、检查或鉴别要点..." />
+              <text class="field-caption notes-caption">诊断 / 治疗思路</text>
+              <textarea class="notes-textarea" auto-height="true" v-model="diagnosisAdvice" placeholder="记录诊断依据、治疗决策与待核实项..." />
+            </view>
+          </view>
+
+          <view v-if="missingFields.length > 0" class="notice-card"><text class="notice-title">待补充或待核实</text><text class="notice-text">{{ missingFields.join('、') }}</text></view>
+          <view class="clinical-bottom-space"></view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+</template>
+
+<script lang="uts">
+type Medication = { name: string, dose: string, route: string, frequency: string, course: string, risk: string }
+type TreatmentGoal = { name: string, mechanism: string, expanded: boolean, medications: Medication[], nonDrugActions: string[] }
+type MonitoringItem = { name: string, frequency: string }
+type ReviewMilestone = { time: string, content: string }
+
+export default {
+  data() {
+    return {
+      draftIndex: -1,
+      sourceMode: 'draft',
+      archiveKey: '',
+      originalContent: '',
+      referenceImages: [] as string[],
+      showOriginalRecord: false,
+      recordTitle: '',
+      clinicalPoints: '',
+      diagnosisAdvice: '',
+      treatmentGoals: [{ name: '', mechanism: '', expanded: true, medications: [] as Medication[], nonDrugActions: [] as string[] }] as TreatmentGoal[],
+      showMonitoring: false,
+      monitoringItems: [] as MonitoringItem[],
+      reviewMilestones: [] as ReviewMilestone[],
+      showClinicalNotes: false,
+      missingFields: [] as string[],
+      tags: [] as string[]
+    }
+  },
+  onLoad(options: any) {
+    this.draftIndex = options != null && options.draftIndex != null ? parseInt(options.draftIndex) : -1
+    this.sourceMode = options != null && options.sourceMode != null ? options.sourceMode as string : 'draft'
+    this.archiveKey = options != null && options.archiveKey != null ? options.archiveKey as string : ''
+    const stored = this.archiveKey !== '' ? uni.getStorageSync('archivePayload_' + this.archiveKey) as any : null
+    if (stored != null) {
+      this.originalContent = stored.sourceContent != null ? stored.sourceContent as string : ''
+      this.referenceImages = Array.isArray(stored.images) ? stored.images : []
+      const western = stored.payload != null && stored.payload.western != null ? stored.payload.western : {}
+      this.recordTitle = western.title != null ? western.title as string : ''
+      this.clinicalPoints = western.clinicalPoints != null ? western.clinicalPoints as string : ''
+      this.diagnosisAdvice = western.diagnosisAdvice != null ? western.diagnosisAdvice as string : ''
+      this.tags = Array.isArray(western.tags) ? western.tags : []
+      this.missingFields = Array.isArray(western.missingFields) ? western.missingFields : []
+    }
+    if (this.originalContent === '' && options != null && options.content != null) this.originalContent = options.content as string
+    if (this.recordTitle === '') {
+      const firstLine = this.originalContent.split('\n')[0]
+      this.recordTitle = firstLine != null && firstLine !== '' ? firstLine.substring(0, 20) : '临床整理记录'
+    }
+  },
+  methods: {
+    goBack() { uni.navigateBack() },
+    toggleOriginalRecord() { this.showOriginalRecord = !this.showOriginalRecord },
+    previewReferenceImage(index: number) { if (this.referenceImages.length > 0) uni.previewImage({ current: this.referenceImages[index], urls: this.referenceImages }) },
+    addReferenceImages() {
+      const remain = 6 - this.referenceImages.length
+      if (remain <= 0) { uni.showToast({ title: '最多保留 6 张原始资料', icon: 'none' }); return }
+      uni.chooseImage({ count: remain, sizeType: ['compressed'], sourceType: ['album', 'camera'], success: (res: any) => {
+        if (res != null && res.tempFilePaths != null) for (let i = 0; i < res.tempFilePaths.length && this.referenceImages.length < 6; i++) this.referenceImages.push(res.tempFilePaths[i])
+      } })
+    },
+    removeReferenceImage(index: number) { this.referenceImages.splice(index, 1) },
+    toggleGoal(index: number) { this.treatmentGoals[index].expanded = !this.treatmentGoals[index].expanded },
+    addTreatmentGoal() { this.treatmentGoals.push({ name: '', mechanism: '', expanded: true, medications: [], nonDrugActions: [] }) },
+    removeTreatmentGoal(index: number) {
+      if (this.treatmentGoals.length === 1) { uni.showToast({ title: '请至少保留一个治疗目标', icon: 'none' }); return }
+      this.treatmentGoals.splice(index, 1)
+    },
+    addMedication(goalIndex: number) { this.treatmentGoals[goalIndex].medications.push({ name: '', dose: '', route: '', frequency: '', course: '', risk: '' }) },
+    removeMedication(goalIndex: number, medicineIndex: number) { this.treatmentGoals[goalIndex].medications.splice(medicineIndex, 1) },
+    addNonDrugAction(goalIndex: number) { this.treatmentGoals[goalIndex].nonDrugActions.push('') },
+    removeNonDrugAction(goalIndex: number, actionIndex: number) { this.treatmentGoals[goalIndex].nonDrugActions.splice(actionIndex, 1) },
+    toggleMonitoring() { this.showMonitoring = !this.showMonitoring },
+    addMonitoring() { this.monitoringItems.push({ name: '', frequency: '' }) },
+    removeMonitoring(index: number) { this.monitoringItems.splice(index, 1) },
+    addReviewMilestone() { this.reviewMilestones.push({ time: '', content: '' }) },
+    removeReviewMilestone(index: number) { this.reviewMilestones.splice(index, 1) },
+    toggleClinicalNotes() { this.showClinicalNotes = !this.showClinicalNotes },
+    medicationCount() {
+      let count = 0
+      for (let i = 0; i < this.treatmentGoals.length; i++) count += this.treatmentGoals[i].medications.length
+      return count
+    },
+    treatmentPlanSummary() {
+      const values = [] as string[]
+      for (let i = 0; i < this.treatmentGoals.length; i++) {
+        const goal = this.treatmentGoals[i]
+        const medicines = [] as string[]
+        for (let j = 0; j < goal.medications.length; j++) {
+          const medicine = goal.medications[j]
+          if (medicine.name.trim() !== '') medicines.push(medicine.name + (medicine.dose.trim() !== '' ? ' ' + medicine.dose : ''))
+        }
+        const actions = [] as string[]
+        for (let j = 0; j < goal.nonDrugActions.length; j++) if (goal.nonDrugActions[j].trim() !== '') actions.push(goal.nonDrugActions[j])
+        if (goal.name.trim() !== '' || medicines.length > 0 || actions.length > 0) values.push((goal.name.trim() === '' ? '未命名治疗目标' : goal.name) + '：' + medicines.concat(actions).join('；'))
+      }
+      return values.join('\n')
+    },
+    monitoringSummary() {
+      const values = [] as string[]
+      for (let i = 0; i < this.monitoringItems.length; i++) if (this.monitoringItems[i].name.trim() !== '') values.push(this.monitoringItems[i].name + (this.monitoringItems[i].frequency.trim() !== '' ? '（' + this.monitoringItems[i].frequency + '）' : ''))
+      for (let i = 0; i < this.reviewMilestones.length; i++) if (this.reviewMilestones[i].time.trim() !== '' || this.reviewMilestones[i].content.trim() !== '') values.push((this.reviewMilestones[i].time === '' ? '复评' : this.reviewMilestones[i].time) + '：' + this.reviewMilestones[i].content)
+      return values.join('\n')
+    },
+    onDone() {
+      if (this.recordTitle.trim() === '') { uni.showToast({ title: '请填写知识标题', icon: 'none' }); return }
+      const eventChannel = this.getOpenerEventChannel()
+      eventChannel.emit('organizeDone', {
+        draftIndex: this.draftIndex, sourceMode: this.sourceMode, archiveKey: this.archiveKey, title: this.recordTitle, dept: '临床', points: this.clinicalPoints, diagnosis: this.diagnosisAdvice,
+        customFields: [{ name: '治疗方案', value: this.treatmentPlanSummary() }, { name: '监测与复评', value: this.monitoringSummary() }, { name: '原始记录', value: this.originalContent }], tags: this.tags, referenceImages: this.referenceImages
+      })
+      uni.showToast({ title: '整理完成', icon: 'success' })
+      setTimeout(() => { uni.navigateBack() }, 500)
+    }
+  }
+}
+</script>
+
+<style scoped>
+.clinical-header { height: 64px; padding-left: 24px; padding-right: 24px; background-color: #faf9f9; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #eeefee; display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.clinical-back-hit { width: 40px; height: 44px; display: flex; flex-direction: row; align-items: center; }
+.clinical-back-icon { color: #1a1c1c; font-size: 28px; line-height: 32px; }
+.clinical-title { color: #1a1c1c; font-size: 17px; line-height: 24px; font-weight: 600; }
+.clinical-done { width: 40px; color: #547774; font-size: 15px; line-height: 24px; font-weight: 600; text-align: right; }
+.clinical-main { padding: 18px 24px 0; display: flex; flex-direction: column; }
+.original-summary { background-color: #f1f5f4; border-radius: 12px; padding: 13px 14px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.original-summary-copy { display: flex; flex-direction: column; }
+.original-summary-title { color: #3b5e5b; font-size: 14px; line-height: 20px; font-weight: 700; }
+.original-summary-meta { color: #717977; font-size: 11px; line-height: 16px; margin-top: 2px; }
+.original-summary-action { color: #547774; font-size: 13px; line-height: 20px; font-weight: 600; }
+.original-editor-card { margin-top: 10px; background-color: #ffffff; border-radius: 12px; border-width: 1px; border-style: solid; border-color: #d8e0de; padding: 14px; display: flex; flex-direction: column; }
+.source-editor { width: 100%; min-height: 64px; box-sizing: border-box; border-width: 0; background-color: transparent; color: #414847; font-size: 14px; line-height: 21px; padding: 0; }
+.reference-media-head { margin-top: 12px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.reference-media-title { color: #717977; font-size: 12px; line-height: 18px; font-weight: 600; }
+.reference-media-add { color: #547774; font-size: 12px; line-height: 18px; font-weight: 700; }
+.reference-media-scroll { width: 100%; margin-top: 8px; }
+.reference-media-row { display: flex; flex-direction: row; padding-right: 4px; }
+.reference-media-item { width: 76px; height: 76px; margin-right: 8px; border-radius: 9px; overflow: hidden; position: relative; background-color: #edf1f0; }
+.reference-media-image { width: 76px; height: 76px; }
+.reference-media-delete { position: absolute; right: 4px; top: 3px; width: 18px; height: 18px; border-radius: 9px; background-color: rgba(26, 28, 28, 0.65); color: #ffffff; font-size: 13px; line-height: 18px; text-align: center; }
+.reference-media-more { width: 76px; height: 76px; border-radius: 9px; background-color: #e8f1ef; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.reference-media-more-count { color: #3b5e5b; font-size: 17px; line-height: 22px; font-weight: 700; }
+.reference-media-more-copy { color: #547774; font-size: 10px; line-height: 14px; }
+.reference-empty { height: 46px; margin-top: 8px; border-radius: 9px; border-width: 1px; border-style: dashed; border-color: #c1c8c6; display: flex; flex-direction: row; align-items: center; justify-content: center; }
+.reference-empty-copy { color: #717977; font-size: 12px; line-height: 18px; }
+.plan-head { margin-top: 24px; margin-bottom: 8px; }
+.plan-title { color: #294b48; font-size: 23px; line-height: 32px; font-weight: 700; }
+.plan-summary-card { border-radius: 12px; background-color: #eaf3f1; padding: 10px 13px; }
+.plan-summary-copy { color: #3b5e5b; font-size: 12px; line-height: 18px; font-weight: 600; }
+.goal-card { margin-top: 12px; border-radius: 14px; background-color: #ffffff; border-width: 1px; border-style: solid; border-color: #d8e0de; overflow: hidden; }
+.goal-head { padding: 13px 14px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.goal-head-copy { flex: 1; display: flex; flex-direction: column; }
+.goal-index { color: #547774; font-size: 11px; line-height: 16px; font-weight: 700; }
+.goal-name-preview { color: #1a1c1c; font-size: 16px; line-height: 23px; font-weight: 700; margin-top: 1px; }
+.goal-toggle { color: #547774; font-size: 12px; line-height: 18px; font-weight: 600; padding-left: 12px; }
+.goal-editor { border-top-width: 1px; border-top-style: solid; border-top-color: #edf0ef; padding: 14px; display: flex; flex-direction: column; }
+.field-caption { color: #717977; font-size: 11px; line-height: 16px; font-weight: 700; }
+.goal-name-input { height: 38px; box-sizing: border-box; border-width: 0; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #d8e0de; background-color: transparent; color: #1a1c1c; font-size: 17px; line-height: 24px; font-weight: 700; padding: 0; }
+.goal-field-caption { margin-top: 12px; }
+.compact-editor { width: 100%; min-height: 38px; box-sizing: border-box; border-width: 0; background-color: transparent; color: #414847; font-size: 13px; line-height: 20px; padding: 4px 0 0; }
+.subsection-head { margin-top: 14px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.subsection-title { color: #294b48; font-size: 13px; line-height: 20px; font-weight: 700; }
+.subsection-action { color: #547774; font-size: 12px; line-height: 18px; font-weight: 700; }
+.medicine-card { margin-top: 8px; border-radius: 10px; background-color: #f8faf9; border-width: 1px; border-style: solid; border-color: #e0e7e5; padding: 10px; display: flex; flex-direction: column; }
+.medicine-top-row { display: flex; flex-direction: row; align-items: center; }
+.medicine-name-input { flex: 1; height: 30px; box-sizing: border-box; border-width: 0; background-color: transparent; color: #1a1c1c; font-size: 14px; font-weight: 700; padding: 0; }
+.medicine-remove { width: 22px; color: #8a3c32; font-size: 18px; line-height: 24px; text-align: right; }
+.medicine-detail-row { margin-top: 7px; display: flex; flex-direction: row; }
+.medicine-detail-input { height: 34px; box-sizing: border-box; border-width: 1px; border-style: solid; border-color: #d8e0de; border-radius: 7px; background-color: #ffffff; color: #414847; font-size: 12px; padding-left: 7px; padding-right: 5px; }
+.medicine-dose { width: 78px; }
+.medicine-route { flex: 1; margin-left: 6px; }
+.medicine-frequency { flex: 1; margin-left: 6px; }
+.medicine-course-input { height: 34px; margin-top: 7px; box-sizing: border-box; border-width: 1px; border-style: solid; border-color: #d8e0de; border-radius: 7px; background-color: #ffffff; color: #414847; font-size: 12px; padding-left: 7px; padding-right: 7px; }
+.medicine-risk-input { height: 34px; margin-top: 7px; box-sizing: border-box; border-width: 1px; border-style: solid; border-color: #e7d5a7; border-radius: 7px; background-color: #fffaf0; color: #6e6250; font-size: 12px; padding-left: 7px; padding-right: 7px; }
+.empty-inline { height: 38px; margin-top: 8px; border-radius: 8px; border-width: 1px; border-style: dashed; border-color: #c3d0cd; display: flex; flex-direction: row; align-items: center; justify-content: center; }
+.empty-inline-copy { color: #547774; font-size: 12px; line-height: 18px; font-weight: 600; }
+.non-drug-head { margin-top: 14px; }
+.non-drug-row { margin-top: 8px; border-radius: 8px; background-color: #f7f9f8; border-width: 1px; border-style: solid; border-color: #e0e7e5; padding: 8px 9px; display: flex; flex-direction: row; align-items: flex-start; }
+.non-drug-input { flex: 1; min-height: 28px; box-sizing: border-box; border-width: 0; background-color: transparent; color: #414847; font-size: 13px; line-height: 19px; padding: 0; }
+.non-drug-remove { width: 20px; color: #8a3c32; font-size: 17px; line-height: 20px; text-align: right; }
+.goal-remove { color: #9a5148; font-size: 12px; line-height: 18px; font-weight: 600; margin-top: 15px; }
+.add-goal { height: 44px; margin-top: 12px; border-radius: 10px; border-width: 1px; border-style: dashed; border-color: #93aaa5; display: flex; flex-direction: row; align-items: center; justify-content: center; }
+.add-goal-copy { color: #3b5e5b; font-size: 13px; line-height: 20px; font-weight: 700; }
+.monitoring-card { margin-top: 20px; background-color: #ffffff; border-radius: 14px; border-width: 1px; border-style: solid; border-color: #d8e0de; }
+.monitoring-head { padding: 14px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.monitoring-copy { flex: 1; display: flex; flex-direction: column; }
+.monitoring-title { color: #1a1c1c; font-size: 16px; line-height: 23px; font-weight: 700; }
+.monitoring-meta { color: #717977; font-size: 11px; line-height: 16px; margin-top: 2px; }
+.monitoring-action { color: #547774; font-size: 12px; line-height: 18px; font-weight: 600; padding-left: 12px; }
+.monitoring-editor { border-top-width: 1px; border-top-style: solid; border-top-color: #edf0ef; padding: 0 14px 14px; display: flex; flex-direction: column; }
+.monitoring-row { margin-top: 8px; display: flex; flex-direction: row; align-items: center; }
+.monitoring-name { flex: 1; height: 38px; box-sizing: border-box; border-width: 1px; border-style: solid; border-color: #d8e0de; border-radius: 8px; background-color: #ffffff; color: #1a1c1c; font-size: 12px; padding-left: 8px; padding-right: 6px; }
+.monitoring-value { width: 112px; height: 38px; margin-left: 7px; box-sizing: border-box; border-width: 1px; border-style: solid; border-color: #d8e0de; border-radius: 8px; background-color: #ffffff; color: #414847; font-size: 12px; padding-left: 8px; padding-right: 6px; }
+.monitoring-remove { width: 20px; color: #8a3c32; font-size: 17px; line-height: 22px; text-align: right; }
+.review-head { margin-top: 16px; }
+.review-row { margin-top: 8px; display: flex; flex-direction: row; align-items: center; }
+.review-time { width: 80px; height: 38px; box-sizing: border-box; border-width: 1px; border-style: solid; border-color: #d8e0de; border-radius: 8px; background-color: #ffffff; color: #1a1c1c; font-size: 12px; padding-left: 8px; padding-right: 6px; }
+.review-content { flex: 1; height: 38px; margin-left: 7px; box-sizing: border-box; border-width: 1px; border-style: solid; border-color: #d8e0de; border-radius: 8px; background-color: #ffffff; color: #414847; font-size: 12px; padding-left: 8px; padding-right: 6px; }
+.clinical-notes-card { margin-top: 12px; border-radius: 12px; background-color: #f5f7f6; border-width: 1px; border-style: solid; border-color: #e0e7e5; }
+.notes-head { padding: 13px 14px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.notes-title { color: #414847; font-size: 14px; line-height: 20px; font-weight: 700; }
+.notes-editor { border-top-width: 1px; border-top-style: solid; border-top-color: #e2e8e6; padding: 13px 14px; display: flex; flex-direction: column; }
+.notes-title-input { height: 36px; box-sizing: border-box; border-width: 0; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: #d8e0de; background-color: transparent; color: #1a1c1c; font-size: 15px; line-height: 22px; font-weight: 700; padding: 0; }
+.notes-caption { margin-top: 13px; }
+.notes-textarea { width: 100%; min-height: 40px; box-sizing: border-box; border-width: 0; background-color: transparent; color: #414847; font-size: 13px; line-height: 20px; padding: 4px 0 0; }
+.notice-card { margin-top: 14px; background-color: #fff8e7; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; }
+.notice-title { color: #775d22; font-size: 13px; line-height: 18px; font-weight: 600; margin-bottom: 4px; }
+.notice-text { color: #6d6250; font-size: 13px; line-height: 19px; }
+.clinical-bottom-space { height: 34px; }
+</style>

@@ -4,6 +4,7 @@
       <AppHeader title="设置" :back="true" />
       <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
         <view class="content settings-content">
+          <!-- Standard sections -->
           <view v-for="section in sections" :key="section.title" class="settings-section">
             <text class="section-title settings-title">{{ section.title }}</text>
             <view class="settings-card card">
@@ -13,11 +14,52 @@
               </view>
             </view>
           </view>
+
+          <!-- 智能归档 API Key -->
+          <view class="settings-section">
+            <text class="section-title settings-title">智能归档</text>
+            <view class="api-desc">
+              <text class="api-desc-text">使用阿里云百炼 API 自动整理临床笔记，仅需填入您的 API Key 即可。</text>
+            </view>
+            <view class="settings-card card">
+              <view class="api-row">
+                <text class="api-label">API Key</text>
+                <input
+                  class="api-input"
+                  v-model="apiKey"
+                  placeholder="sk-..."
+                  password="true"
+                  @blur="saveApiConfig"
+                />
+              </view>
+              <view class="api-divider"></view>
+              <view class="api-row">
+                <text class="api-label">语音服务地址</text>
+                <input
+                  class="api-input"
+                  v-model="voiceUploadEndpoint"
+                  placeholder="https://..."
+                  @blur="saveVoiceServiceConfig"
+                />
+              </view>
+            </view>
+          </view>
+
+          <view class="settings-section">
+            <text class="section-title settings-title">实验室功能</text>
+            <view class="settings-card card">
+              <view class="lab-row" @tap="openLaboratory('western')"><view><text class="lab-title">完整临床整理</text><text class="lab-copy">实验性工作台</text></view><text class="lab-arrow">›</text></view>
+              <view class="divider"></view>
+              <view class="lab-row" @tap="openLaboratory('tcm')"><view><text class="lab-title">中医辨证整理</text><text class="lab-copy">实验性工作台</text></view><text class="lab-arrow">›</text></view>
+            </view>
+          </view>
+
           <text class="logout-button" @tap="confirmLogout">退出登录</text>
+          <view style="height: 24px;"></view>
         </view>
       </scroll-view>
 
-      <!-- 关于弹窗 -->
+      <!-- About Modal -->
       <view v-if="showAbout" class="modal-mask" @tap="showAbout = false">
         <view class="modal-box" @tap.stop="">
           <text class="modal-app-name">Medora</text>
@@ -45,10 +87,39 @@ export default {
   data() {
     return {
       sections: settingsSections,
-      showAbout: false
+      showAbout: false,
+      apiKey: '',
+      voiceUploadEndpoint: ''
     }
   },
+  onShow() {
+    this.loadApiConfig()
+  },
   methods: {
+    loadApiConfig() {
+      const key = uni.getStorageSync('smartArchiveApiKey')
+      if (key != null && key != '') this.apiKey = key as string
+      const endpoint = uni.getStorageSync('voiceUploadEndpoint')
+      if (endpoint != null && endpoint != '') this.voiceUploadEndpoint = endpoint as string
+    },
+    saveApiConfig() {
+      uni.setStorageSync('smartArchiveApiKey', this.apiKey)
+      uni.showToast({ title: '配置已保存', icon: 'success' })
+    },
+    saveVoiceServiceConfig() {
+      const endpoint = this.voiceUploadEndpoint.trim().replace(/\/$/, '')
+      if (endpoint !== '' && !endpoint.startsWith('https://')) {
+        uni.showToast({ title: '请使用 HTTPS 服务地址', icon: 'none' })
+        return
+      }
+      this.voiceUploadEndpoint = endpoint
+      uni.setStorageSync('voiceUploadEndpoint', endpoint)
+      uni.showToast({ title: '语音服务地址已保存', icon: 'success' })
+    },
+    openLaboratory(kind: string) {
+      const path = kind === 'tcm' ? '/pages/organize-tcm/index?sourceMode=laboratory&content=' : '/pages/organize/index?sourceMode=laboratory&content='
+      uni.navigateTo({ url: path, animationType: 'fade-in', animationDuration: 280 } as any)
+    },
     onRowAction(action : string) {
       if (action == 'about') {
         this.showAbout = true
@@ -57,7 +128,6 @@ export default {
       }
     },
     cleanCache() {
-      // 找到"清理缓存"项并更新 meta
       for (let i = 0; i < this.sections.length; i++) {
         let sec = this.sections[i]
         for (let j = 0; j < sec.items.length; j++) {
@@ -90,7 +160,42 @@ export default {
 .settings-card { overflow: hidden; }
 .logout-button { width: 128px; height: 48px; border-radius: 12px; background-color: #ffffff; color: #ba1a1a; line-height: 48px; text-align: center; font-size: 16px; font-weight: 700; }
 
-/* ===== About Modal ===== */
+/* API Config Row */
+.api-desc { margin-bottom: 8px; }
+.api-desc-text { color: #717977; font-size: 12px; line-height: 18px; }
+.api-row {
+  min-height: 56px;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.api-divider { height: 1px; background-color: #f0f1f0; margin-left: 16px; }
+.api-label {
+  width: 80px;
+  color: #1a1c1c;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.api-input {
+  flex: 1;
+  height: 40px;
+  color: #414847;
+  font-size: 14px;
+  line-height: 20px;
+  padding: 0;
+  margin: 0;
+  border-width: 0;
+  background-color: transparent;
+}
+.lab-row { min-height: 62px; padding: 0 16px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.lab-title { color: #1a1c1c; font-size: 16px; line-height: 22px; font-weight: 600; }
+.lab-copy { color: #717977; font-size: 12px; line-height: 18px; margin-top: 2px; }
+.lab-arrow { color: #717977; font-size: 24px; line-height: 24px; }
+
+/* About Modal */
 .settings-phone-frame { position: relative; }
 .modal-mask {
   position: absolute;

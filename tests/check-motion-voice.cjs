@@ -48,8 +48,12 @@ if (!archiveFlow.includes("capturing") || !archiveFlow.includes("structuring") |
   errors.push("AiArchiveFlow must model capture, structuring, and ready states");
 }
 
-if (!record.includes("VoiceCapture") || !record.includes("AiArchiveFlow")) {
-  errors.push("record page must compose voice capture and AI archive flow");
+if (!record.includes("标题生成器") || !record.includes("saveSimpleKnowledgeCard")) {
+  errors.push("record page must use the minimal title-only archive flow");
+}
+
+if (record.includes("<VoiceCapture") || record.includes("<AiArchiveFlow")) {
+  errors.push("record main page must not expose voice or AI workflow components");
 }
 
 if (!app.includes("motion-enter") || !app.includes("motion-press")) {

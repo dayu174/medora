@@ -1,67 +1,70 @@
 <template>
   <view class="app-page safe-top">
     <view class="phone-frame">
-      <!-- Header: bg-surface(#f9f9f8), px-24px, py-16px, flex, between, center -->
       <view :class="entryClass('home-header', 0)">
         <text class="brand">Medora</text>
-        <view class="search-hit" @tap="go('/pages/library/index')">
-          <image class="search-icon-img" src="/static/icons/search.png" mode="aspectFit"></image>
-        </view>
+        <view class="search-hit" @tap="go('/pages/library/index')"><image class="search-icon-img" src="/static/icons/search.png" mode="aspectFit"></image></view>
       </view>
 
-      <!-- scroll-view 占满剩余空间 -->
       <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
-        <!-- main: px-4(16px), pt-4(16px), flex-col -->
         <view class="home-main">
-          <!-- Quick Actions: 2 col grid, gap-16px -->
-          <view class="quick-grid">
-            <!-- 开始记录: bg-primary(#334b46), rounded-xl(12px), p-16px, flex-col, items-start -->
-            <view :class="quickClass('record')" @touchstart="pressSurface('record')" @touchend="releaseSurface" @touchcancel="releaseSurface" @tap="go('/pages/record/index')">
-              <view class="quick-icon-box quick-icon-box-record">
-                <text class="quick-icon quick-icon-record">+</text>
+          <view :class="quickGridClass()">
+            <view :class="recordComposerClass()" @touchstart="pressSurface('record')" @touchend="releaseSurface" @touchcancel="releaseSurface" @tap="openInlineComposer">
+              <view :class="recordSummaryClass()"><view class="quick-icon-box quick-icon-box-record"><text class="quick-icon quick-icon-record">+</text></view><text class="quick-label quick-label-record">开始记录</text></view>
+              <view :class="inlineContentClass()" @tap.stop="">
+                <view class="inline-record-head"><text class="inline-record-title">新建记录</text><text class="inline-record-close" @tap="closeInlineComposer">×</text></view>
+                <textarea class="inline-record-input" v-model="inlineRecordContent" :focus="inlineComposerOpen" maxlength="2000" placeholder="记录此刻想记住的医学知识..." placeholder-style="color:#a5afac;" />
+                <view class="inline-record-footer"><text class="inline-record-count">{{ inlineRecordContent.length }}/2000</text><view :class="inlineArchiveClass()" @tap="onInlineSmartArchive"><text class="inline-archive-label">{{ isInlineArchiving ? '归档中...' : '智能归档' }}</text></view></view>
               </view>
-              <text class="quick-label quick-label-record">开始记录</text>
             </view>
-            <!-- 计算器: bg-surface-container-low(#f3f4f3), rounded-xl(12px), p-16px, border outline-variant/30 -->
-            <view :class="quickClass('calc')" @touchstart="pressSurface('calc')" @touchend="releaseSurface" @touchcancel="releaseSurface" @tap="go('/pages/calculator/index')">
-              <view class="quick-icon-box">
-                <image class="quick-icon-img" src="/static/icons/calculator.svg" mode="aspectFit"></image>
-              </view>
+            <view :class="calculatorClass()" @touchstart="pressSurface('calc')" @touchend="releaseSurface" @touchcancel="releaseSurface" @tap="go('/pages/calculator/index')">
+              <view class="quick-icon-box"><image class="quick-icon-img" src="/static/icons/calculator.svg" mode="aspectFit"></image></view>
               <text class="quick-label quick-label-calc">计算器</text>
             </view>
           </view>
 
-          <!-- Recent Records: flex-col -->
-          <view :class="entryClass('recent-section', 2)">
-            <!-- Header row: flex, between, items-end -->
-            <view class="recent-head">
-              <text class="recent-title">最近记录</text>
-              <text class="recent-link" @tap="go('/pages/library/index')">查看全部</text>
+          <view v-if="recentRecords.length === 0" :class="entryClass('empty-state', 2)">
+            <view class="empty-copy">
+              <text class="empty-title">记录你的第一条临床发现</text>
+              <text class="empty-desc">沉淀为结构化知识卡片，构建个人医学知识库</text>
             </view>
-            <!-- Record list -->
-            <view class="record-list">
-              <view v-for="(record, index) in records" :key="record.no" :class="recordCardClass(index)" :style="record.draft ? 'opacity: 0.75;' : ''" @touchstart="pressSurface('record-' + index)" @touchend="releaseSurface" @touchcancel="releaseSurface" @tap="goDetail(index)">
-                <!-- Top row: flex, between, items-start -->
-                <view class="record-top">
-                  <view class="record-top-left">
-                    <text class="record-no">{{ record.no }}</text>
-                    <text class="record-name" :style="record.draft ? 'font-style: italic;' : ''">{{ record.title }}</text>
-                  </view>
-                </view>
-                <!-- Description -->
-                <text class="record-desc">{{ record.summary }}</text>
-                <!-- Tags -->
-                <view v-if="record.tags.length > 0" class="record-tags">
-                  <text v-for="(tag, ti) in record.tags" :key="tag" class="record-tag" :style="ti > 0 ? 'margin-left: 4px;' : ''">{{ tag }}</text>
+            <view class="example-section">
+              <text class="example-label">示例知识卡片</text>
+              <view class="example-card" @tap="goDetail(exampleRecord)">
+                <view class="example-tag-row"><text class="example-tag">#{{ exampleRecord.tags[0] }} #{{ exampleRecord.tags[1] }}</text></view>
+                <text class="example-title">{{ exampleRecord.title }}</text>
+                <text class="example-focus">查房重点</text>
+                <view class="example-bullet-row"><text class="example-bullet">•</text><text class="example-bullet-copy">注意询问疼痛是否从脐周转移至右下腹</text></view>
+                <view class="example-bullet-row"><text class="example-bullet">•</text><text class="example-bullet-copy">麦氏点压痛是重要体征</text></view>
+                <view class="example-bullet-row"><text class="example-bullet">•</text><text class="example-bullet-copy">白细胞升高提示炎症反应</text></view>
+                <view class="example-footer">
+                  <view class="example-source"><text class="example-source-copy">来源：今日外科查房</text><text class="example-date">2024/05/20</text></view>
+                  <text class="example-mark">*</text>
                 </view>
               </view>
             </view>
           </view>
 
-          <view style="height: 24px;"></view>
+          <view v-else :class="entryClass('recent-section', 2)">
+            <view class="recent-head"><text class="recent-title">最近记录</text><text class="recent-count">{{ recentRecords.length }} 条</text></view>
+            <view v-for="(record, index) in recentRecords" :key="record.id" class="home-swipe-card">
+              <view class="home-delete-btn" @tap="deleteRecentRecord(index)"><text class="home-delete-label">删除</text></view>
+              <view :class="recentCardClass(index)" :style="'transform: translateX(' + recentTranslate(index) + 'px);'" @touchstart="recentTouchStart($event, index)" @touchmove="recentTouchMove($event, index)" @touchend="recentTouchEnd($event, index)" @touchcancel="recentTouchEnd($event, index)" @tap="openRecentCard(record)">
+                <view class="recent-card-head"><text class="recent-record-title">{{ record.title }}</text><text class="recent-record-dept">{{ record.dept }}</text></view>
+                <view class="recent-record-divider"></view>
+                <text class="recent-record-source-label">原始记录</text>
+                <text class="recent-record-summary">{{ record.summary }}</text>
+                <view class="recent-tag-row"><text v-for="tag in record.tags" :key="tag" class="recent-tag">{{ tag }}</text></view>
+                <text class="recent-record-time">{{ record.reviewed }}</text>
+              </view>
+            </view>
+          </view>
+          <view class="home-bottom-space"></view>
         </view>
       </scroll-view>
-
+      <view v-if="focusedCard != null" class="card-focus-mask" @tap="closeCardFocus">
+        <view class="card-focus-panel" :style="cardFocusStyle(focusedCard)" @tap.stop=""><view class="card-focus-head"><text class="card-focus-kicker">原始记录</text><text class="card-focus-close" @tap="closeCardFocus">×</text></view><text class="card-focus-title">{{ focusedCard.title }}</text><scroll-view class="card-focus-scroll" scroll-y="true" :show-scrollbar="false"><text class="card-focus-content">{{ focusedCard.sourceContent }}</text></scroll-view></view>
+      </view>
       <BottomTabs active="home" />
     </view>
   </view>
@@ -70,24 +73,144 @@
 <script lang="uts">
 import BottomTabs from '../../components/BottomTabs/BottomTabs.uvue'
 import { records } from '../../common/medora-data.uts'
+import { parseArchiveTitle } from '../../common/archive-payload.uts'
+
+interface HomeSwipeState { translateX: number, animating: boolean, startX: number, lastX: number, lastTime: number }
 
 export default {
   components: { BottomTabs },
   data() {
-    return { records: records, pageReady: false, pressedSurface: '' }
+    return { exampleRecord: records[0], recentRecords: [] as any[], recentSwipeStates: [] as HomeSwipeState[], focusedCard: null as any, pageReady: false, pressedSurface: '', inlineComposerOpen: false, inlineRecordContent: '', isInlineArchiving: false }
   },
-  onReady() {
-    setTimeout(() => { this.pageReady = true }, 16)
-  },
+  onReady() { setTimeout(() => { this.pageReady = true }, 16) },
+  onShow() { this.loadRecentRecords() },
   methods: {
-    go(url: string) {
-      uni.navigateTo({ url: url, animationType: 'fade-in', animationDuration: 360 } as any)
+    loadRecentRecords() {
+      const stored = this.readStorageList('homeRecentRecordsJson', 'homeRecentRecords')
+      const storedList = this.storageList(stored)
+      const normalized = [] as any[]
+      for (let index = 0; index < storedList.length; index++) normalized.push(this.normalizeRecentRecord(storedList[index], index))
+      const recentRecords = normalized.length > 10 ? normalized.slice(0, 10) : normalized
+      this.recentRecords = recentRecords
+      if (recentRecords.length > 0) this.writeStorageList('homeRecentRecordsJson', 'homeRecentRecords', recentRecords)
+      this.syncRecentSwipeStates()
     },
-    goDetail(index: number) {
-      const record = this.records[index]
-      if (record != null && (record as any).diseaseId != null) {
-        uni.navigateTo({ url: '/pages/knowledge-detail/index?id=' + (record as any).diseaseId, animationType: 'fade-in', animationDuration: 360 } as any)
+    storageList(raw: any) {
+      const normalized = raw != null ? JSON.parse(JSON.stringify(raw)) as any : []
+      return Array.isArray(normalized) ? normalized : [] as any[]
+    },
+    readStorageList(jsonKey: string, legacyKey: string) {
+      const serialized = uni.getStorageSync(jsonKey) as string
+      if (serialized != null && serialized !== '') {
+        try {
+          return this.storageList(JSON.parse(serialized))
+        } catch (error) {}
       }
+      return this.storageList(uni.getStorageSync(legacyKey))
+    },
+    writeStorageList(jsonKey: string, legacyKey: string, list: any[]) {
+      uni.setStorageSync(legacyKey, list)
+      uni.setStorageSync(jsonKey, JSON.stringify(list))
+    },
+    normalizeRecentRecord(raw: any, index: number) {
+      const sourceRecord = raw != null ? JSON.parse(JSON.stringify(raw)) as any : null
+      const source = sourceRecord != null && sourceRecord.sourceContent != null ? sourceRecord.sourceContent as string : ''
+      const firstLine = source.split('\n')[0] != null ? source.split('\n')[0].trim() : ''
+      const rawTitle = sourceRecord != null && sourceRecord.title != null ? sourceRecord.title as string : ''
+      const rawSummary = sourceRecord != null && sourceRecord.summary != null ? sourceRecord.summary as string : ''
+      const normalizedTitle = rawTitle === '未命名知识卡' || rawTitle === '未命名临床记录' || rawTitle === '未命名速记' ? '' : rawTitle
+      const rawDept = sourceRecord != null && sourceRecord.dept != null ? sourceRecord.dept as string : ''
+      const rawTags = sourceRecord != null && Array.isArray(sourceRecord.tags) ? sourceRecord.tags as string[] : [] as string[]
+      const tags = [] as string[]
+      for (let tagIndex = 0; tagIndex < rawTags.length; tagIndex++) if (rawTags[tagIndex].trim() !== '') tags.push(rawTags[tagIndex])
+      if (tags.length === 0) tags.push('临床笔记')
+      return {
+        id: sourceRecord != null && sourceRecord.id != null && sourceRecord.id !== '' ? sourceRecord.id : (sourceRecord != null && sourceRecord.diseaseId != null ? sourceRecord.diseaseId : 'recent_' + index),
+        title: normalizedTitle.trim() !== '' ? normalizedTitle : (firstLine !== '' ? firstLine.substring(0, 28) : (rawSummary.trim() !== '' ? rawSummary.substring(0, 28) : '未命名临床记录')),
+        dept: rawDept.trim() !== '' ? rawDept : '待分类',
+        summary: rawSummary.trim() !== '' ? rawSummary : (source.trim() !== '' ? source.substring(0, 60) : '尚未添加摘要'),
+        reviewed: sourceRecord != null && sourceRecord.reviewed != null && sourceRecord.reviewed !== '' ? sourceRecord.reviewed : '刚刚整理',
+        diseaseId: sourceRecord != null && sourceRecord.diseaseId != null ? sourceRecord.diseaseId : '',
+        tags: tags,
+        sourceContent: source
+      }
+    },
+    syncRecentSwipeStates() {
+      const states = [] as HomeSwipeState[]
+      for (let index = 0; index < this.recentRecords.length; index++) states.push({ translateX: 0, animating: false, startX: 0, lastX: 0, lastTime: 0 })
+      this.recentSwipeStates = states
+    },
+    go(url: string) { uni.navigateTo({ url: url, animationType: 'fade-in', animationDuration: 360 } as any) },
+    goDetail(record: any) {
+      if (record != null && record.diseaseId != null && record.diseaseId !== '') uni.navigateTo({ url: '/pages/knowledge-detail/index?id=' + record.diseaseId, animationType: 'fade-in', animationDuration: 360 } as any)
+    },
+    openRecentCard(record: any) { this.focusedCard = record },
+    closeCardFocus() { this.focusedCard = null },
+    cardFocusStyle(card: any) {
+      const content = card != null && card.sourceContent != null ? card.sourceContent as string : ''
+      let height = 280
+      if (content.length > 180) height = 400
+      if (content.length > 420) height = 560
+      return 'height: ' + height + 'px;'
+    },
+    openInlineComposer() {
+      if (!this.inlineComposerOpen) this.inlineComposerOpen = true
+    },
+    closeInlineComposer() {
+      if (this.isInlineArchiving) return
+      this.inlineComposerOpen = false
+    },
+    onInlineSmartArchive() {
+      const content = this.inlineRecordContent.trim()
+      if (content === '') {
+        uni.showToast({ title: '请先输入内容', icon: 'none' })
+        return
+      }
+      const apiKey = uni.getStorageSync('smartArchiveApiKey') as string
+      if (apiKey == null || apiKey === '') {
+        uni.showModal({ title: '需要 API Key', content: '请先在“我的 - 设置”中配置百炼 API Key。', confirmText: '去设置', success: (result: any) => { if (result.confirm) this.go('/pages/settings/index') } })
+        return
+      }
+      this.isInlineArchiving = true
+      uni.showLoading({ title: '正在归档...' })
+      uni.request({
+        url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+        method: 'POST',
+        header: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+        data: { model: 'qwen-plus', messages: [{ role: 'system', content: '你是医学学习笔记的标题生成器。只根据用户原文生成一个准确、简洁的中文标题，不得补充、改写、解释任何医学内容，不得生成诊断、用药建议、数字、标签或分类。标题不超过18个汉字。仅输出合法 JSON：{"title":""}，不要 Markdown。' }, { role: 'user', content: content }], temperature: 0.2 },
+        success: (res: any) => {
+          uni.hideLoading()
+          this.isInlineArchiving = false
+          const choices = res != null && res.data != null ? res.data.choices : null
+          if (res != null && res.statusCode === 200 && choices != null && choices.length > 0 && choices[0].message != null) {
+            this.saveInlineKnowledgeCard(parseArchiveTitle(choices[0].message.content as string), content)
+            this.inlineRecordContent = ''
+            this.inlineComposerOpen = false
+            uni.showToast({ title: '已归档', icon: 'success' })
+            return
+          }
+          uni.showToast({ title: '归档失败，请稍后重试', icon: 'none' })
+        },
+        fail: () => {
+          uni.hideLoading()
+          this.isInlineArchiving = false
+          uni.showToast({ title: '网络请求失败，请稍后重试', icon: 'none' })
+        }
+      })
+    },
+    saveInlineKnowledgeCard(aiTitle: string, sourceContent: string) {
+      const firstLine = sourceContent.split('\n')[0] != null ? sourceContent.split('\n')[0].trim() : ''
+      const title = aiTitle.trim() !== '' ? aiTitle.trim() : (firstLine !== '' ? firstLine.substring(0, 28) : '未命名知识卡')
+      const id = 'custom_' + Date.now()
+      const card = { diseaseId: id, title: title, dept: '未分类', summary: sourceContent, reviewed: '刚刚归档', tags: [] as string[], sourceContent: sourceContent, cardType: 'simple_note' }
+      const cards = this.storageList(this.readStorageList('customKnowledgeCardsJson', 'customKnowledgeCards'))
+      cards.unshift(card)
+      this.writeStorageList('customKnowledgeCardsJson', 'customKnowledgeCards', cards)
+      const recent = this.storageList(this.readStorageList('homeRecentRecordsJson', 'homeRecentRecords'))
+      recent.unshift({ id: id, diseaseId: id, title: title, dept: '未分类', summary: sourceContent, reviewed: '刚刚归档', tags: [] as string[], sourceContent: sourceContent, cardType: 'simple_note' })
+      if (recent.length > 10) recent.splice(10, recent.length - 10)
+      this.writeStorageList('homeRecentRecordsJson', 'homeRecentRecords', recent)
+      this.loadRecentRecords()
     },
     entryClass(base: string, index: number) {
       let value = base + ' motion-enter'
@@ -96,263 +219,165 @@ export default {
       return value
     },
     quickClass(kind: string) {
-      let value = this.entryClass(kind == 'record' ? 'quick-btn quick-record' : 'quick-btn quick-calc', 1)
-      if (this.pressedSurface == kind) value += ' quick-btn-pressed'
+      let value = this.entryClass(kind === 'record' ? 'quick-btn quick-record' : 'quick-btn quick-calc', 1)
+      if (this.pressedSurface === kind) value += ' quick-btn-pressed'
       return value
     },
-    recordCardClass(index: number) {
-      let value = this.entryClass('record-card', index + 1)
-      if (this.pressedSurface == 'record-' + index) value += ' record-card-pressed'
+    quickGridClass() { return this.inlineComposerOpen ? 'quick-grid quick-grid-composer' : 'quick-grid' },
+    recordComposerClass() {
+      if (this.inlineComposerOpen) return 'quick-btn quick-record inline-record-card'
+      return this.quickClass('record')
+    },
+    calculatorClass() {
+      let value = this.quickClass('calc')
+      if (this.inlineComposerOpen) value += ' quick-calc-collapsing'
       return value
     },
-    pressSurface(key: string) {
-      this.pressedSurface = key
+    recordSummaryClass() { return this.inlineComposerOpen ? 'quick-record-summary quick-record-summary-hidden' : 'quick-record-summary' },
+    inlineContentClass() { return this.inlineComposerOpen ? 'inline-record-content inline-record-content-active' : 'inline-record-content' },
+    inlineArchiveClass() { return this.isInlineArchiving ? 'inline-archive inline-archive-disabled' : 'inline-archive' },
+    pressSurface(key: string) { this.pressedSurface = key },
+    releaseSurface() { this.pressedSurface = '' },
+    recentTouchStart(event: any, index: number) {
+      const state = this.recentSwipeStates[index]
+      if (state == null) return
+      for (let itemIndex = 0; itemIndex < this.recentSwipeStates.length; itemIndex++) if (itemIndex !== index) { this.recentSwipeStates[itemIndex].animating = true; this.recentSwipeStates[itemIndex].translateX = 0 }
+      state.animating = false
+      state.startX = event.touches[0].clientX
+      state.lastX = state.startX
+      state.lastTime = Date.now()
     },
-    releaseSurface() {
-      this.pressedSurface = ''
+    recentTouchMove(event: any, index: number) {
+      const state = this.recentSwipeStates[index]
+      if (state == null) return
+      const currentX = event.touches[0].clientX
+      let distance = state.startX - currentX
+      if (distance > 80) distance = 80 + (distance - 80) * 0.3
+      if (distance < 0) distance = distance * 0.3
+      state.translateX = -distance
+      state.lastX = currentX
+      state.lastTime = Date.now()
+    },
+    recentTouchEnd(event: any, index: number) {
+      const state = this.recentSwipeStates[index]
+      if (state == null) return
+      state.animating = true
+      const elapsed = Date.now() - state.lastTime
+      const velocity = elapsed > 0 ? Math.abs(state.lastX - state.startX) / elapsed : 0
+      if ((velocity > 0.5 && state.lastX < state.startX) || state.translateX < -42) state.translateX = -80
+      else state.translateX = 0
+    },
+    recentTranslate(index: number) { const state = this.recentSwipeStates[index]; return state != null ? state.translateX : 0 },
+    recentCardClass(index: number) { const state = this.recentSwipeStates[index]; return state != null && state.animating ? 'recent-card recent-card-transition' : 'recent-card' },
+    deleteLibraryEntity(diseaseId: string) {
+      if (diseaseId === '') return
+      if (diseaseId.indexOf('custom_') === 0) {
+        const stored = this.readStorageList('customKnowledgeCardsJson', 'customKnowledgeCards')
+        const cards = this.storageList(stored)
+        for (let itemIndex = cards.length - 1; itemIndex >= 0; itemIndex--) {
+          if (cards[itemIndex].diseaseId === diseaseId) cards.splice(itemIndex, 1)
+        }
+        this.writeStorageList('customKnowledgeCardsJson', 'customKnowledgeCards', cards)
+        return
+      }
+      const storedIds = this.readStorageList('deletedBuiltinKnowledgeCardIdsJson', 'deletedBuiltinKnowledgeCardIds')
+      const deletedIds = this.storageList(storedIds)
+      if (deletedIds.indexOf(diseaseId) < 0) deletedIds.push(diseaseId)
+      this.writeStorageList('deletedBuiltinKnowledgeCardIdsJson', 'deletedBuiltinKnowledgeCardIds', deletedIds)
+    },
+    deleteRecentRecord(index: number) {
+      if (index < 0 || index >= this.recentRecords.length) return
+      const record = this.recentRecords[index]
+      const diseaseId = record != null && record.diseaseId != null ? record.diseaseId as string : ''
+      this.recentRecords.splice(index, 1)
+      this.deleteLibraryEntity(diseaseId)
+      this.writeStorageList('homeRecentRecordsJson', 'homeRecentRecords', this.recentRecords)
+      this.syncRecentSwipeStates()
+      uni.showToast({ title: '已删除', icon: 'success' })
     }
   }
 }
 </script>
 
 <style scoped>
-/*
- * ===== 布局计算 (iPhone 16 Pro) =====
- * 屏幕宽度: 393px
- * app-page: 852px高
- * safe-top: 59px (状态栏)
- * phone-frame: 793px高
- * bottom-nav: 75px高
- * 可滚动区域: 793 - 75 = 718px
- * 内容区左右 padding: 16px → 可用宽度: 393 - 32 = 361px
- *
- * ===== Stitch Design Tokens =====
- * primary: #334b46, on-primary: #ffffff
- * background: #f9f9f8, surface: #f9f9f8
- * surface-container-low: #f3f4f3, surface-container-lowest: #ffffff
- * surface-variant: #e1e3e2, outline-variant: #c1c8c5
- * on-surface: #191c1c, on-surface-variant: #424846
- * secondary: #52606b
- * error-container: #ffdad6, on-error-container: #93000a
- * tertiary-container: #6a5b50, tertiary: #51443a
- *
- * spacing: container-margin=24px, gutter=16px, stack-md=16px, stack-sm=8px, unit=4px
- * borderRadius: lg=8px, xl=12px, full=9999px
- * fontSize: display-lg-mobile=32/40/700, headline-md=24/32/600
- *          body-lg=18/28/400, body-md=16/24/400, body-sm=14/20/400
- *          label-caps=12/16/500
- */
-
-/* ===== Header ===== */
-/* Stitch: bg-surface, px-container-margin(24px), py-stack-md(16px), flex, between, center */
-.home-header {
-  background-color: #f9f9f8;
-  padding: 16px 24px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-}
-/* Medora: font-display-lg-mobile, 32px/40px, 700, text-primary, tracking-tight */
-.brand {
-  color: #334b46;
-  font-size: 32px;
-  line-height: 40px;
-  font-weight: 700;
-}
-/* Search button: p-2(8px), rounded-full */
-.search-hit {
-  width: 40px;
-  height: 40px;
-  border-radius: 20px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-}
+.home-header { background-color: #f9f9f8; padding: 16px 24px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.brand { color: #334b46; font-size: 32px; line-height: 40px; font-weight: 700; }
+.search-hit { width: 40px; height: 40px; border-radius: 20px; display: flex; flex-direction: row; align-items: center; justify-content: center; }
 .search-icon-img { width: 22px; height: 22px; }
-
-/* ===== Main content ===== */
-/* Stitch: px-4(16px), pt-4(16px) */
-.home-main {
-  padding: 16px;
-}
-
-/* ===== Quick Actions ===== */
-/* Stitch: grid-cols-2, gap-gutter(16px) */
-/* 可用宽度 361px, 每个按钮: (361-16)/2 = 172px */
-.quick-grid {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-}
-/* Common: rounded-xl(12px), p-stack-md(16px), flex-col, items-start, gap-stack-sm(8px) */
-.quick-btn {
-  width: 172px;
-  height: 128px;
-  box-sizing: border-box;
-  border-radius: 12px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-}
+.home-main { padding: 16px; display: flex; flex-direction: column; }
+.quick-grid { display: flex; flex-direction: row; justify-content: space-between; }
+.quick-grid-composer { justify-content: flex-start; }
+.quick-btn { width: 172px; height: 128px; box-sizing: border-box; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; transition-property: width, height, opacity, padding-left, padding-right; transition-duration: 340ms; transition-timing-function: cubic-bezier(0.22, 1.12, 0.36, 1); }
 .quick-btn-pressed { transform: scale(0.98); opacity: 0.94; }
-/* 开始记录: bg-primary(#334b46), shadow */
-.quick-record {
-  background-color: #334b46;
-}
-/* 计算器: bg-surface-container-low(#f3f4f3), border outline-variant/30 */
-.quick-calc {
-  background-color: #f3f4f3;
-  border-width: 1px;
-  border-style: solid;
-  border-color: rgba(193, 200, 197, 0.3);
-}
-/* Icon container: bg-on-primary/20(rgba(255,255,255,0.2)), p-2(8px), rounded-lg(8px) */
-.quick-icon-box {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  padding: 4px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-}
-.quick-icon-box-record {
-  background-color: rgba(255, 255, 255, 0.2);
-}
-/* Icon: Material Symbols, 24px default */
-.quick-icon {
-  font-size: 24px;
-  line-height: 28px;
-}
-.quick-icon-record {
-  color: #ffffff;
-}
-.quick-icon-img {
-  width: 32px;
-  height: 32px;
-}
-.quick-icon-calc {
-  color: #334b46;
-}
-/* Label: body-md(16/24), font-medium(500), gap-stack-sm(8px) from icon */
-.quick-label {
-  margin-top: 8px;
-  font-size: 17px;
-  line-height: 24px;
-  font-weight: 500;
-}
-.quick-label-record {
-  color: #ffffff;
-}
-.quick-label-calc {
-  color: #191c1c;
-}
-
-/* ===== Recent Records ===== */
-/* Stitch: flex-col, gap-stack-lg(32px) from quick actions */
-.recent-section {
-  margin-top: 32px;
-}
-/* Header row: flex, between, items-end */
-.recent-head {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-end;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-/* "最近记录": headline-md, Manrope, 24px/32px, 600, text-primary */
-.recent-title {
-  color: #334b46;
-  font-size: 24px;
-  line-height: 32px;
-  font-weight: 600;
-}
-/* "查看全部": label-caps, JetBrains Mono, 12px/16px, 500, uppercase, text-secondary */
-.recent-link {
-  color: #52606b;
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 500;
-}
-
-/* ===== Record List ===== */
-/* Stitch: grid-cols-1, gap-3(12px) */
-.record-list {
-  display: flex;
-  flex-direction: column;
-}
-/* Record card: bg-surface-container-lowest(#fff), rounded-xl(12px), p-stack-md(16px), border #E2E8F0 */
-.record-card {
-  background-color: #ffffff;
-  border-radius: 12px;
-  padding: 16px;
-  border-width: 1px;
-  border-style: solid;
-  border-color: #E2E8F0;
-  margin-bottom: 12px;
-  display: flex;
-  flex-direction: column;
-}
-.record-card-pressed { transform: scale(0.99); opacity: 0.9; }
-/* Top row: flex, between, items-start */
-.record-top {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  justify-content: space-between;
-}
-.record-top-left {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-/* Case no: label-caps, 12px/16px, 500, uppercase, tracking-widest, text-secondary */
-.record-no {
-  color: #52606b;
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 500;
-}
-/* Title: body-lg, 18px/28px, 500, text-on-surface(#191c1c), gap-unit(4px) from no */
-.record-name {
-  margin-top: 4px;
-  color: #191c1c;
-  font-size: 18px;
-  line-height: 28px;
-  font-weight: 500;
-}
-/* More icon: text-outline-variant(#c1c8c5) */
-.record-more {
-  color: #c1c8c5;
-  font-size: 20px;
-  line-height: 24px;
-}
-/* Description: body-sm, 14px/20px, text-on-surface-variant(#424846), gap-stack-sm(8px) from top */
-.record-desc {
-  margin-top: 8px;
-  color: #424846;
-  font-size: 14px;
-  line-height: 20px;
-}
-/* Tags row: flex, gap-unit(4px), mt-2(8px) */
-.record-tags {
-  margin-top: 8px;
-  display: flex;
-  flex-direction: row;
-}
-/* Tag pill: px-2(8px), py-1(4px), rounded-full, label-caps, text-[10px] */
-/* Card1 tag1: bg-surface-variant/30, text-on-surface-variant */
-.record-tag {
-  padding: 4px 8px;
-  border-radius: 999px;
-  background-color: rgba(225, 227, 226, 0.3);
-  color: #424846;
-  font-size: 10px;
-  line-height: 14px;
-  font-weight: 500;
-}
+.quick-record { background-color: #334b46; }
+.quick-calc { background-color: #f3f4f3; border-width: 1px; border-style: solid; border-color: rgba(193, 200, 197, 0.3); overflow: hidden; }
+.quick-calc-collapsing { width: 0; padding-left: 0; padding-right: 0; border-width: 0; opacity: 0; }
+.quick-record-summary { height: 76px; overflow: hidden; display: flex; flex-direction: column; opacity: 1; transform: translateY(0); transition-property: height, opacity, transform; transition-duration: 180ms; transition-timing-function: ease-out; }
+.quick-record-summary-hidden { height: 0; opacity: 0; transform: translateY(-6px); }
+.inline-record-card { width: 100%; height: 184px; }
+.inline-record-content { width: 100%; height: 0; overflow: hidden; display: flex; flex-direction: column; opacity: 0; transform: translateY(8px); transition-property: height, opacity, transform; transition-duration: 260ms; transition-delay: 60ms; transition-timing-function: cubic-bezier(0.22, 1.12, 0.36, 1); }
+.inline-record-content-active { height: 152px; opacity: 1; transform: translateY(0); }
+.inline-record-head { display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.inline-record-title { color: #ffffff; font-size: 15px; line-height: 22px; font-weight: 700; }
+.inline-record-close { width: 24px; height: 24px; border-radius: 12px; background-color: rgba(255, 255, 255, 0.16); color: #ffffff; font-size: 18px; line-height: 24px; text-align: center; }
+.inline-record-input { width: 100%; flex: 1; margin-top: 8px; padding: 0; border-width: 0; background-color: transparent; color: #ffffff; font-size: 15px; line-height: 22px; }
+.inline-record-footer { margin-top: 8px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.inline-record-count { color: rgba(255, 255, 255, 0.58); font-size: 10px; line-height: 14px; }
+.inline-archive { height: 32px; border-radius: 16px; padding: 0 12px; background-color: #ffffff; display: flex; flex-direction: row; align-items: center; justify-content: center; }
+.inline-archive-disabled { opacity: 0.56; }
+.inline-archive-label { color: #294b48; font-size: 12px; line-height: 18px; font-weight: 700; }
+.quick-icon-box { width: 36px; height: 36px; border-radius: 8px; padding: 4px; display: flex; flex-direction: row; align-items: center; justify-content: center; }
+.quick-icon-box-record { background-color: rgba(255, 255, 255, 0.2); }
+.quick-icon { font-size: 24px; line-height: 28px; }
+.quick-icon-record { color: #ffffff; }
+.quick-icon-img { width: 32px; height: 32px; }
+.quick-label { margin-top: 8px; font-size: 17px; line-height: 24px; font-weight: 500; }
+.quick-label-record { color: #ffffff; }
+.quick-label-calc { color: #191c1c; }
+.empty-state { margin-top: 32px; display: flex; flex-direction: column; }
+.empty-copy { padding: 0 24px; display: flex; flex-direction: column; align-items: center; }
+.empty-title { color: #334b46; font-size: 24px; line-height: 32px; font-weight: 600; text-align: center; }
+.empty-desc { margin-top: 12px; color: #424846; font-size: 14px; line-height: 20px; text-align: center; }
+.example-section { margin-top: 32px; display: flex; flex-direction: column; }
+.example-label { color: #52606b; font-size: 12px; line-height: 16px; font-weight: 600; }
+.example-card { margin-top: 12px; background-color: #ffffff; border-radius: 24px; border-width: 1px; border-style: solid; border-color: rgba(193, 200, 197, 0.4); padding: 24px; display: flex; flex-direction: column; }
+.example-tag-row { display: flex; flex-direction: row; }
+.example-tag { border-radius: 12px; background-color: rgba(51, 75, 70, 0.1); color: #334b46; padding: 4px 10px; font-size: 10px; line-height: 14px; font-weight: 600; }
+.example-title { margin-top: 12px; color: #191c1c; font-size: 24px; line-height: 32px; font-weight: 600; }
+.example-focus { margin-top: 8px; color: #191c1c; font-size: 14px; line-height: 20px; font-weight: 600; }
+.example-bullet-row { margin-top: 7px; display: flex; flex-direction: row; align-items: flex-start; }
+.example-bullet { width: 16px; color: #334b46; font-size: 18px; line-height: 20px; font-weight: 700; }
+.example-bullet-copy { flex: 1; color: #424846; font-size: 14px; line-height: 20px; }
+.example-footer { margin-top: 20px; padding-top: 14px; border-top-width: 1px; border-top-style: solid; border-top-color: #e7e8e7; display: flex; flex-direction: row; justify-content: space-between; align-items: center; }
+.example-source { display: flex; flex-direction: column; }
+.example-source-copy { color: #52606b; font-size: 10px; line-height: 14px; }
+.example-date { margin-top: 2px; color: #a0a5a3; font-size: 10px; line-height: 14px; }
+.example-mark { color: rgba(51, 75, 70, 0.4); font-size: 22px; line-height: 24px; }
+.recent-section { margin-top: 32px; display: flex; flex-direction: column; }
+.recent-head { margin-bottom: 14px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.recent-title { color: #334b46; font-size: 24px; line-height: 32px; font-weight: 600; }
+.recent-count { color: #717977; font-size: 12px; line-height: 18px; }
+.home-swipe-card { position: relative; width: 100%; margin-bottom: 12px; border-radius: 16px; overflow: hidden; }
+.home-delete-btn { position: absolute; top: 0; right: 0; width: 80px; height: 100%; background-color: #ba1a1a; display: flex; flex-direction: row; align-items: center; justify-content: center; }
+.home-delete-label { color: #ffffff; font-size: 13px; line-height: 20px; font-weight: 700; }
+.recent-card { position: relative; z-index: 1; background-color: #ffffff; border-width: 1px; border-style: solid; border-color: #e1e3e2; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; }
+.recent-card-transition { transition-property: transform; transition-duration: 260ms; transition-timing-function: ease-out; }
+.recent-card-head { display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.recent-record-title { flex: 1; color: #294b48; font-size: 20px; line-height: 28px; font-weight: 700; }
+.recent-record-dept { margin-left: 10px; border-radius: 12px; background-color: #edf3f1; color: #334b46; padding: 3px 8px; font-size: 10px; line-height: 14px; font-weight: 600; }
+.recent-record-divider { height: 1px; margin-top: 10px; background-color: #e5ecea; }
+.recent-record-source-label { margin-top: 7px; color: #788481; font-size: 10px; line-height: 14px; font-weight: 700; }
+.recent-record-summary { margin-top: 2px; color: #66716e; font-size: 13px; line-height: 20px; }
+.recent-tag-row { margin-top: 10px; display: flex; flex-direction: row; flex-wrap: wrap; }
+.recent-tag { margin-right: 6px; margin-bottom: 4px; border-radius: 10px; background-color: #f3f4f3; color: #52606b; padding: 3px 8px; font-size: 10px; line-height: 14px; }
+.recent-record-time { margin-top: 8px; color: #8a908e; font-size: 11px; line-height: 16px; }
+.home-bottom-space { height: 24px; }
+.card-focus-mask { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background-color: rgba(30, 42, 40, 0.42); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 30; opacity: 1; transition-property: opacity; transition-duration: 240ms; transition-timing-function: ease-out; }
+.card-focus-panel { width: 329px; max-height: 620px; box-sizing: border-box; background-color: #f7fbfa; border-radius: 16px; padding: 22px; display: flex; flex-direction: column; transform: scale(1); transition-property: transform; transition-duration: 320ms; transition-timing-function: ease-out; }
+.card-focus-head { display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.card-focus-kicker { color: #547774; font-size: 12px; line-height: 18px; font-weight: 700; }
+.card-focus-close { width: 28px; height: 28px; border-radius: 14px; background-color: #e5edeb; color: #547774; font-size: 20px; line-height: 28px; text-align: center; }
+.card-focus-title { color: #294b48; font-size: 24px; line-height: 34px; font-weight: 700; margin-top: 12px; }
+.card-focus-scroll { flex: 1; margin-top: 14px; }
+.card-focus-content { color: #4e5956; font-size: 16px; line-height: 28px; }
 </style>
