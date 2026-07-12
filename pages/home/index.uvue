@@ -1,19 +1,19 @@
 <template>
   <view class="app-page safe-top">
     <view class="phone-frame">
-      <view :class="entryClass('home-header', 0)">
+      <view :class="homeHeaderClass()">
         <text class="brand">Medora</text>
         <view class="search-hit" @tap="go('/pages/library/index')"><image class="search-icon-img" src="/static/icons/search.png" mode="aspectFit"></image></view>
       </view>
 
       <scroll-view class="page-scroll" scroll-y="true" :show-scrollbar="false">
-        <view class="home-main">
+        <view :class="homeMainClass()">
           <view :class="quickGridClass()">
             <view :class="recordComposerClass()" @touchstart="pressSurface('record')" @touchend="releaseSurface" @touchcancel="releaseSurface" @tap="openInlineComposer">
               <view :class="recordSummaryClass()"><view class="quick-icon-box quick-icon-box-record"><text class="quick-icon quick-icon-record">+</text></view><text class="quick-label quick-label-record">开始记录</text></view>
               <view :class="inlineContentClass()" @tap.stop="">
                 <view class="inline-record-head"><text class="inline-record-title">新建记录</text><text class="inline-record-close" @tap="closeInlineComposer">×</text></view>
-                <textarea class="inline-record-input" v-model="inlineRecordContent" :focus="inlineComposerOpen" maxlength="2000" placeholder="记录此刻想记住的医学知识..." placeholder-style="color:#a5afac;" />
+                <textarea class="inline-record-input" v-model="inlineRecordContent" :focus="inlineComposerFocused" maxlength="2000" placeholder="记录此刻想记住的医学知识..." placeholder-style="color:#a5afac;" />
                 <view class="inline-record-footer"><text class="inline-record-count">{{ inlineRecordContent.length }}/2000</text><view :class="inlineArchiveClass()" @tap="onInlineSmartArchive"><text class="inline-archive-label">{{ isInlineArchiving ? '归档中...' : '智能归档' }}</text></view></view>
               </view>
             </view>
@@ -48,8 +48,13 @@
           <view v-else :class="entryClass('recent-section', 2)">
             <view class="recent-head"><text class="recent-title">最近记录</text><text class="recent-count">{{ recentRecords.length }} 条</text></view>
             <view v-for="(record, index) in recentRecords" :key="record.id" class="home-swipe-card">
-              <view class="home-delete-btn" @tap="deleteRecentRecord(index)"><text class="home-delete-label">删除</text></view>
-              <view :class="recentCardClass(index)" :style="'transform: translateX(' + recentTranslate(index) + 'px);'" @touchstart="recentTouchStart($event, index)" @touchmove="recentTouchMove($event, index)" @touchend="recentTouchEnd($event, index)" @touchcancel="recentTouchEnd($event, index)" @tap="openRecentCard(record)">
+              <view v-if="recentTranslate(index) < -4 && sharedCard == null"
+                :class="deleteActionClass(index)"
+                :style="deleteActionStyle(index)"
+                @tap="deleteRecentRecord(index)">
+                <text :class="deleteActionLabelClass(index)">删除</text>
+              </view>
+              <view :id="'home-recent-card-' + index" :class="recentCardClass(index, record)" :style="recentCardStyle(index, record)" @touchstart="recentTouchStart($event, index)" @touchmove="recentTouchMove($event, index)" @touchend="recentTouchEnd($event, index)" @touchcancel="recentTouchEnd($event, index)" @tap="openRecentCard(record, index)">
                 <view class="recent-card-head"><text class="recent-record-title">{{ record.title }}</text><text class="recent-record-dept">{{ record.dept }}</text></view>
                 <view class="recent-record-divider"></view>
                 <text class="recent-record-source-label">原始记录</text>
@@ -62,8 +67,24 @@
           <view class="home-bottom-space"></view>
         </view>
       </scroll-view>
-      <view v-if="focusedCard != null" class="card-focus-mask" @tap="closeCardFocus">
-        <view class="card-focus-panel" :style="cardFocusStyle(focusedCard)" @tap.stop=""><view class="card-focus-head"><text class="card-focus-kicker">原始记录</text><text class="card-focus-close" @tap="closeCardFocus">×</text></view><text class="card-focus-title">{{ focusedCard.title }}</text><scroll-view class="card-focus-scroll" scroll-y="true" :show-scrollbar="false"><text class="card-focus-content">{{ focusedCard.sourceContent }}</text></scroll-view></view>
+      <view v-if="sharedCard != null" class="shared-card-overlay" @tap="closeSharedCard">
+        <view :class="sharedBackdropClass()"></view>
+        <view :class="sharedFrostClass()"></view>
+        <view :class="sharedStageClass()" :style="sharedCardTransform()"><view :class="sharedStageFillClass()"></view></view>
+        <view :class="sharedContentLayerClass()" :style="sharedContentTransform()" @tap.stop="" @touchstart="sharedDragStart($event)" @touchmove="sharedDragMove($event)" @touchend="sharedDragEnd" @touchcancel="sharedDragEnd">
+          <view class="shared-card-summary">
+            <view class="shared-card-head"><text class="recent-record-title">{{ sharedCard.title }}</text><text class="recent-record-dept">{{ sharedCard.dept }}</text></view>
+            <view class="recent-record-divider"></view>
+            <text class="recent-record-source-label">原始记录</text>
+            <text class="shared-card-source">{{ sharedCard.summary }}</text>
+            <view class="recent-tag-row"><text v-for="tag in sharedCard.tags" :key="tag" class="recent-tag">{{ tag }}</text></view>
+            <text class="recent-record-time">{{ sharedCard.reviewed }}</text>
+          </view>
+          <view :class="sharedDetailClass()">
+            <view class="shared-detail-top"><text class="shared-detail-label">完整原始记录</text><text class="shared-detail-close" @tap="closeSharedCard">×</text></view>
+            <scroll-view class="shared-detail-scroll" scroll-y="true" :show-scrollbar="false"><text class="shared-detail-content">{{ sharedCard.sourceContent }}</text></scroll-view>
+          </view>
+        </view>
       </view>
       <BottomTabs active="home" />
     </view>
@@ -75,12 +96,12 @@ import BottomTabs from '../../components/BottomTabs/BottomTabs.uvue'
 import { records } from '../../common/medora-data.uts'
 import { parseArchiveTitle } from '../../common/archive-payload.uts'
 
-interface HomeSwipeState { translateX: number, animating: boolean, startX: number, lastX: number, lastTime: number }
+interface HomeSwipeState { translateX: number, animating: boolean, startX: number, lastX: number, lastTime: number, armed: boolean, deleting: boolean }
 
 export default {
   components: { BottomTabs },
   data() {
-    return { exampleRecord: records[0], recentRecords: [] as any[], recentSwipeStates: [] as HomeSwipeState[], focusedCard: null as any, pageReady: false, pressedSurface: '', inlineComposerOpen: false, inlineRecordContent: '', isInlineArchiving: false }
+    return { exampleRecord: records[0], recentRecords: [] as any[], recentSwipeStates: [] as HomeSwipeState[], deletingRecentId: '', pageReady: false, pressedSurface: '', inlineComposerOpen: false, inlineComposerFocused: false, inlineRecordContent: '', isInlineArchiving: false, pressedRecentId: '', sharedCard: null as any, sharedCardIndex: -1, sharedCardState: 'idle', sharedClosingFade: false, sharedCardLeft: 16, sharedCardTop: 240, sharedCardWidth: 361, sharedCardHeight: 184, sharedDragStartY: 0, sharedDragOffset: 0, sharedDragging: false }
   },
   onReady() { setTimeout(() => { this.pageReady = true }, 16) },
   onShow() { this.loadRecentRecords() },
@@ -137,27 +158,128 @@ export default {
     },
     syncRecentSwipeStates() {
       const states = [] as HomeSwipeState[]
-      for (let index = 0; index < this.recentRecords.length; index++) states.push({ translateX: 0, animating: false, startX: 0, lastX: 0, lastTime: 0 })
+      for (let index = 0; index < this.recentRecords.length; index++) states.push({ translateX: 0, animating: false, startX: 0, lastX: 0, lastTime: 0, armed: false, deleting: false })
       this.recentSwipeStates = states
     },
     go(url: string) { uni.navigateTo({ url: url, animationType: 'fade-in', animationDuration: 360 } as any) },
     goDetail(record: any) {
       if (record != null && record.diseaseId != null && record.diseaseId !== '') uni.navigateTo({ url: '/pages/knowledge-detail/index?id=' + record.diseaseId, animationType: 'fade-in', animationDuration: 360 } as any)
     },
-    openRecentCard(record: any) { this.focusedCard = record },
-    closeCardFocus() { this.focusedCard = null },
-    cardFocusStyle(card: any) {
-      const content = card != null && card.sourceContent != null ? card.sourceContent as string : ''
-      let height = 280
-      if (content.length > 180) height = 400
-      if (content.length > 420) height = 560
-      return 'height: ' + height + 'px;'
+    openRecentCard(record: any, index: number) {
+      if (this.sharedCard != null || this.recentTranslate(index) < -8) return
+      setTimeout(() => { this.openSharedCard(record, index) }, 96)
+    },
+    openSharedCard(record: any, index: number) {
+      if (this.sharedCard != null) return
+      const query = uni.createSelectorQuery().in(this)
+      query.select('#home-recent-card-' + index).boundingClientRect((rect: any) => {
+        const frameTop = rect != null && rect.top != null ? Math.max(0, rect.top - 59) : 240
+        this.sharedCardLeft = rect != null && rect.left != null ? rect.left : 16
+        this.sharedCardTop = frameTop
+        this.sharedCardWidth = rect != null && rect.width != null ? rect.width : 361
+        this.sharedCardHeight = rect != null && rect.height != null ? rect.height : 184
+        this.resetRecentSwipeStates()
+        this.sharedCard = record
+        this.sharedCardIndex = index
+        this.sharedCardState = 'opening'
+        this.sharedClosingFade = false
+        this.pressedRecentId = ''
+        setTimeout(() => { if (this.sharedCard != null && this.sharedCardState === 'opening') this.sharedCardState = 'open' }, 16)
+      }).exec()
+    },
+    closeSharedCard() {
+      if (this.sharedCard == null || this.sharedCardState === 'closing') return
+      this.sharedDragging = false
+      this.sharedDragOffset = 0
+      this.sharedClosingFade = false
+      this.sharedCardState = 'closing'
+      setTimeout(() => { if (this.sharedCardState === 'closing') this.sharedClosingFade = true }, 430)
+      setTimeout(() => {
+        if (this.sharedCardState === 'closing') {
+          this.sharedCard = null
+          this.sharedCardIndex = -1
+          this.sharedClosingFade = false
+          this.sharedCardState = 'idle'
+        }
+      }, 670)
+    },
+    sharedCardTransform() {
+      const stageLeft = 16
+      const stageTop = 160
+      const stageWidth = 361
+      const stageHeight = 480
+      let left = 0
+      let top = 0
+      let scaleX = 1
+      let scaleY = 1
+      let radius = 20
+      if (this.sharedCardState === 'opening' || this.sharedCardState === 'closing') {
+        left = this.sharedCardLeft - stageLeft
+        top = this.sharedCardTop - stageTop
+        scaleX = this.sharedCardWidth / stageWidth
+        scaleY = this.sharedCardHeight / stageHeight
+        radius = 16
+      } else if (this.sharedDragging) {
+        const progress = Math.min(1, this.sharedDragOffset / 220)
+        top = this.sharedDragOffset
+        scaleX = 1 - 0.05 * progress
+        scaleY = 1 - 0.05 * progress
+        radius = 20 - 4 * progress
+      }
+      return 'transform: translateX(' + left + 'px) translateY(' + top + 'px) scaleX(' + scaleX + ') scaleY(' + scaleY + '); border-radius: ' + radius + 'px;'
+    },
+    sharedContentTransform() {
+      let left = 0
+      let top = 0
+      let scale = 1
+      if (this.sharedCardState === 'opening' || this.sharedCardState === 'closing') {
+        left = this.sharedCardLeft - 16
+        top = this.sharedCardTop - 160
+      } else if (this.sharedDragging) {
+        const progress = Math.min(1, this.sharedDragOffset / 220)
+        top = this.sharedDragOffset
+        scale = 1 - 0.05 * progress
+      }
+      return 'transform: translateX(' + left + 'px) translateY(' + top + 'px) scale(' + scale + ');'
+    },
+    sharedStageClass() {
+      let value = 'shared-card-stage'
+      if (this.sharedCardState === 'open') value += ' shared-card-stage-open'
+      if (this.sharedDragging) value += ' shared-card-stage-dragging'
+      return value
+    },
+    sharedStageFillClass() { return this.sharedClosingFade ? 'shared-card-stage-fill shared-card-closing-fade' : 'shared-card-stage-fill' },
+    sharedContentLayerClass() { return this.sharedClosingFade ? 'shared-card-content-layer shared-card-closing-fade' : 'shared-card-content-layer' },
+    sharedBackdropClass() { return this.sharedCardState === 'opening' || this.sharedCardState === 'closing' ? 'shared-card-backdrop shared-card-backdrop-hidden' : 'shared-card-backdrop' },
+    sharedFrostClass() { return this.sharedCardState === 'opening' || this.sharedCardState === 'closing' ? 'shared-card-frost-layer shared-card-backdrop-hidden' : 'shared-card-frost-layer' },
+    sharedDetailClass() { return this.sharedCardState === 'open' && !this.sharedDragging ? 'shared-detail shared-detail-visible' : 'shared-detail' },
+    sharedDragStart(event: any) {
+      if (event.touches == null || event.touches.length === 0 || this.sharedCardState !== 'open') return
+      this.sharedDragStartY = event.touches[0].clientY
+      this.sharedDragOffset = 0
+      this.sharedDragging = true
+    },
+    sharedDragMove(event: any) {
+      if (!this.sharedDragging || event.touches == null || event.touches.length === 0) return
+      const distance = event.touches[0].clientY - this.sharedDragStartY
+      this.sharedDragOffset = distance > 0 ? Math.min(260, distance) : 0
+    },
+    sharedDragEnd() {
+      if (!this.sharedDragging) return
+      const shouldClose = this.sharedDragOffset > 116
+      this.sharedDragging = false
+      if (shouldClose) this.closeSharedCard()
+      else this.sharedDragOffset = 0
     },
     openInlineComposer() {
-      if (!this.inlineComposerOpen) this.inlineComposerOpen = true
+      if (this.inlineComposerOpen) return
+      this.inlineComposerFocused = false
+      this.inlineComposerOpen = true
+      setTimeout(() => { if (this.inlineComposerOpen) this.inlineComposerFocused = true }, 400)
     },
     closeInlineComposer() {
       if (this.isInlineArchiving) return
+      this.inlineComposerFocused = false
       this.inlineComposerOpen = false
     },
     onInlineSmartArchive() {
@@ -185,6 +307,7 @@ export default {
           if (res != null && res.statusCode === 200 && choices != null && choices.length > 0 && choices[0].message != null) {
             this.saveInlineKnowledgeCard(parseArchiveTitle(choices[0].message.content as string), content)
             this.inlineRecordContent = ''
+            this.inlineComposerFocused = false
             this.inlineComposerOpen = false
             uni.showToast({ title: '已归档', icon: 'success' })
             return
@@ -218,6 +341,12 @@ export default {
       if (index > 0) value += ' motion-delay-' + index
       return value
     },
+    homeHeaderClass() {
+      let value = this.entryClass('home-header', 0)
+      if (this.sharedCard != null) value += ' home-shared-background'
+      return value
+    },
+    homeMainClass() { return this.sharedCard != null ? 'home-main home-shared-background' : 'home-main' },
     quickClass(kind: string) {
       let value = this.entryClass(kind === 'record' ? 'quick-btn quick-record' : 'quick-btn quick-calc', 1)
       if (this.pressedSurface === kind) value += ' quick-btn-pressed'
@@ -239,22 +368,34 @@ export default {
     pressSurface(key: string) { this.pressedSurface = key },
     releaseSurface() { this.pressedSurface = '' },
     recentTouchStart(event: any, index: number) {
+      if (this.deletingRecentId !== '') return
       const state = this.recentSwipeStates[index]
       if (state == null) return
-      for (let itemIndex = 0; itemIndex < this.recentSwipeStates.length; itemIndex++) if (itemIndex !== index) { this.recentSwipeStates[itemIndex].animating = true; this.recentSwipeStates[itemIndex].translateX = 0 }
+      for (let itemIndex = 0; itemIndex < this.recentSwipeStates.length; itemIndex++) {
+        if (itemIndex !== index) {
+          this.recentSwipeStates[itemIndex].animating = true
+          this.recentSwipeStates[itemIndex].translateX = 0
+          this.recentSwipeStates[itemIndex].armed = false
+        }
+      }
       state.animating = false
+      state.translateX = 0
+      state.armed = false
       state.startX = event.touches[0].clientX
       state.lastX = state.startX
       state.lastTime = Date.now()
+      this.pressedRecentId = this.recentRecords[index] != null ? this.recentRecords[index].id : ''
     },
     recentTouchMove(event: any, index: number) {
       const state = this.recentSwipeStates[index]
       if (state == null) return
       const currentX = event.touches[0].clientX
-      let distance = state.startX - currentX
-      if (distance > 80) distance = 80 + (distance - 80) * 0.3
-      if (distance < 0) distance = distance * 0.3
+      this.pressedRecentId = ''
+      const deleteThreshold = 361 * 0.55
+      const rawDistance = Math.max(0, state.startX - currentX)
+      const distance = rawDistance > 420 ? 420 + (rawDistance - 420) * 0.18 : rawDistance
       state.translateX = -distance
+      state.armed = distance >= deleteThreshold
       state.lastX = currentX
       state.lastTime = Date.now()
     },
@@ -262,13 +403,53 @@ export default {
       const state = this.recentSwipeStates[index]
       if (state == null) return
       state.animating = true
-      const elapsed = Date.now() - state.lastTime
-      const velocity = elapsed > 0 ? Math.abs(state.lastX - state.startX) / elapsed : 0
-      if ((velocity > 0.5 && state.lastX < state.startX) || state.translateX < -42) state.translateX = -80
+      if (state.armed) {
+        this.finishSwipeDelete(index)
+        return
+      }
+      if (state.translateX < -42) state.translateX = -80
       else state.translateX = 0
+      state.armed = false
+      if (state.translateX < -8) this.pressedRecentId = ''
     },
     recentTranslate(index: number) { const state = this.recentSwipeStates[index]; return state != null ? state.translateX : 0 },
-    recentCardClass(index: number) { const state = this.recentSwipeStates[index]; return state != null && state.animating ? 'recent-card recent-card-transition' : 'recent-card' },
+    deleteActionStyle(index: number) {
+      const distance = Math.abs(this.recentTranslate(index))
+      const stretch = distance > 80 ? Math.min(140, (distance - 80) * 0.48) : 0
+      const width = 80 + stretch
+      return 'width:' + width + 'px;'
+    },
+    deleteActionClass(index: number) {
+      const state = this.recentSwipeStates[index]
+      let value = state != null && state.armed ? 'home-delete-btn home-delete-btn-armed' : 'home-delete-btn'
+      if (state != null && !state.animating) value += ' home-delete-btn-dragging'
+      return value
+    },
+    deleteActionLabelClass(index: number) {
+      const state = this.recentSwipeStates[index]
+      return state != null && state.armed ? 'home-delete-label home-delete-label-armed' : 'home-delete-label'
+    },
+    recentCardClass(index: number, record: any) {
+      const state = this.recentSwipeStates[index]
+      let value = state != null && state.animating ? 'recent-card recent-card-transition' : 'recent-card'
+      if (record != null && record.id === this.pressedRecentId) value += ' recent-card-pressed recent-card-transition'
+      return value
+    },
+    recentCardStyle(index: number, record: any) {
+      const scale = record != null && record.id === this.pressedRecentId ? 0.96 : 1
+      const state = this.recentSwipeStates[index]
+      const opacity = state != null && state.deleting ? 0 : 1
+      const zIndex = state != null && (state.translateX !== 0 || state.deleting) ? 2 : 1
+      return 'transform: translateX(' + this.recentTranslate(index) + 'px) scale(' + scale + '); opacity:' + opacity + '; z-index:' + zIndex + ';'
+    },
+    resetRecentSwipeStates() {
+      for (let index = 0; index < this.recentSwipeStates.length; index++) {
+        this.recentSwipeStates[index].animating = true
+        this.recentSwipeStates[index].translateX = 0
+        this.recentSwipeStates[index].armed = false
+        this.recentSwipeStates[index].deleting = false
+      }
+    },
     deleteLibraryEntity(diseaseId: string) {
       if (diseaseId === '') return
       if (diseaseId.indexOf('custom_') === 0) {
@@ -285,15 +466,45 @@ export default {
       if (deletedIds.indexOf(diseaseId) < 0) deletedIds.push(diseaseId)
       this.writeStorageList('deletedBuiltinKnowledgeCardIdsJson', 'deletedBuiltinKnowledgeCardIds', deletedIds)
     },
-    deleteRecentRecord(index: number) {
-      if (index < 0 || index >= this.recentRecords.length) return
+    finishSwipeDelete(index: number) {
+      if (this.deletingRecentId !== '' || index < 0 || index >= this.recentRecords.length) return
       const record = this.recentRecords[index]
+      if (record == null || record.id == null || record.id === '') return
+      const state = this.recentSwipeStates[index]
+      if (state == null || state.deleting) return
+      const id = record.id as string
+      this.deletingRecentId = id
+      state.armed = false
+      state.deleting = true
+      state.animating = true
+      state.translateX = -440
+      this.pressedRecentId = ''
+      setTimeout(() => { this.deleteRecentRecordById(id) }, 220)
+    },
+    deleteRecentRecordById(id: string) {
+      let recordIndex = -1
+      for (let index = 0; index < this.recentRecords.length; index++) {
+        if (this.recentRecords[index] != null && this.recentRecords[index].id === id) {
+          recordIndex = index
+          break
+        }
+      }
+      this.deletingRecentId = ''
+      if (recordIndex < 0) return
+      const record = this.recentRecords[recordIndex]
       const diseaseId = record != null && record.diseaseId != null ? record.diseaseId as string : ''
-      this.recentRecords.splice(index, 1)
+      this.recentRecords.splice(recordIndex, 1)
       this.deleteLibraryEntity(diseaseId)
       this.writeStorageList('homeRecentRecordsJson', 'homeRecentRecords', this.recentRecords)
       this.syncRecentSwipeStates()
       uni.showToast({ title: '已删除', icon: 'success' })
+    },
+    deleteRecentRecord(index: number) {
+      if (this.deletingRecentId !== '') return
+      if (index < 0 || index >= this.recentRecords.length) return
+      const record = this.recentRecords[index]
+      if (record == null || record.id == null || record.id === '') return
+      this.deleteRecentRecordById(record.id as string)
     }
   }
 }
@@ -305,18 +516,19 @@ export default {
 .search-hit { width: 40px; height: 40px; border-radius: 20px; display: flex; flex-direction: row; align-items: center; justify-content: center; }
 .search-icon-img { width: 22px; height: 22px; }
 .home-main { padding: 16px; display: flex; flex-direction: column; }
+.home-shared-background { opacity: 0.46; transform: scale(0.98); transition-property: opacity, transform; transition-duration: 320ms; transition-timing-function: ease-out; }
 .quick-grid { display: flex; flex-direction: row; justify-content: space-between; }
 .quick-grid-composer { justify-content: flex-start; }
-.quick-btn { width: 172px; height: 128px; box-sizing: border-box; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; transition-property: width, height, opacity, padding-left, padding-right; transition-duration: 340ms; transition-timing-function: cubic-bezier(0.22, 1.12, 0.36, 1); }
+.quick-btn { width: 172px; height: 128px; box-sizing: border-box; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; overflow: hidden; transition-property: width, height, border-radius, opacity, padding-left, padding-right; transition-duration: 380ms; transition-timing-function: cubic-bezier(0.22, 1.08, 0.36, 1); }
 .quick-btn-pressed { transform: scale(0.98); opacity: 0.94; }
 .quick-record { background-color: #334b46; }
 .quick-calc { background-color: #f3f4f3; border-width: 1px; border-style: solid; border-color: rgba(193, 200, 197, 0.3); overflow: hidden; }
-.quick-calc-collapsing { width: 0; padding-left: 0; padding-right: 0; border-width: 0; opacity: 0; }
-.quick-record-summary { height: 76px; overflow: hidden; display: flex; flex-direction: column; opacity: 1; transform: translateY(0); transition-property: height, opacity, transform; transition-duration: 180ms; transition-timing-function: ease-out; }
-.quick-record-summary-hidden { height: 0; opacity: 0; transform: translateY(-6px); }
+.quick-calc-collapsing { width: 0; padding-left: 0; padding-right: 0; border-width: 0; opacity: 0; transition-delay: 40ms; }
+.quick-record-summary { height: 76px; overflow: hidden; display: flex; flex-direction: column; opacity: 1; transform: translateY(0); transition-property: height, opacity, transform; transition-duration: 240ms; transition-timing-function: cubic-bezier(0.22, 1.08, 0.36, 1); }
+.quick-record-summary-hidden { height: 0; opacity: 0; transform: translateY(-8px); transition-delay: 30ms; }
 .inline-record-card { width: 100%; height: 184px; }
-.inline-record-content { width: 100%; height: 0; overflow: hidden; display: flex; flex-direction: column; opacity: 0; transform: translateY(8px); transition-property: height, opacity, transform; transition-duration: 260ms; transition-delay: 60ms; transition-timing-function: cubic-bezier(0.22, 1.12, 0.36, 1); }
-.inline-record-content-active { height: 152px; opacity: 1; transform: translateY(0); }
+.inline-record-content { width: 100%; height: 0; overflow: hidden; display: flex; flex-direction: column; opacity: 0; transform: translateY(10px); transition-property: height, opacity, transform; transition-duration: 320ms; transition-delay: 0ms; transition-timing-function: cubic-bezier(0.22, 1.08, 0.36, 1); }
+.inline-record-content-active { height: 152px; opacity: 1; transform: translateY(0); transition-delay: 90ms; }
 .inline-record-head { display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
 .inline-record-title { color: #ffffff; font-size: 15px; line-height: 22px; font-weight: 700; }
 .inline-record-close { width: 24px; height: 24px; border-radius: 12px; background-color: rgba(255, 255, 255, 0.16); color: #ffffff; font-size: 18px; line-height: 24px; text-align: center; }
@@ -357,11 +569,15 @@ export default {
 .recent-head { margin-bottom: 14px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
 .recent-title { color: #334b46; font-size: 24px; line-height: 32px; font-weight: 600; }
 .recent-count { color: #717977; font-size: 12px; line-height: 18px; }
-.home-swipe-card { position: relative; width: 100%; margin-bottom: 12px; border-radius: 16px; overflow: hidden; }
-.home-delete-btn { position: absolute; top: 0; right: 0; width: 80px; height: 100%; background-color: #ba1a1a; display: flex; flex-direction: row; align-items: center; justify-content: center; }
-.home-delete-label { color: #ffffff; font-size: 13px; line-height: 20px; font-weight: 700; }
+.home-swipe-card { position: relative; width: 100%; margin-bottom: 12px; border-radius: 16px; overflow: visible; }
+.home-delete-btn { position: absolute; top: 0; right: 0; height: 100%; border-top-right-radius: 16px; border-bottom-right-radius: 16px; background-color: #ba1a1a; display: flex; flex-direction: row; align-items: center; justify-content: center; transition-property: width, background-color; transition-duration: 180ms; transition-timing-function: cubic-bezier(0.22, 1.12, 0.36, 1); }
+.home-delete-btn-dragging { transition-duration: 0ms; }
+.home-delete-btn-armed { background-color: #9f1414; }
+.home-delete-label { color: #ffffff; font-size: 13px; line-height: 20px; font-weight: 700; transform: scale(1); transition-property: transform; transition-duration: 160ms; transition-timing-function: cubic-bezier(0.22, 1.12, 0.36, 1); }
+.home-delete-label-armed { transform: scale(1.08); }
 .recent-card { position: relative; z-index: 1; background-color: #ffffff; border-width: 1px; border-style: solid; border-color: #e1e3e2; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; }
-.recent-card-transition { transition-property: transform; transition-duration: 260ms; transition-timing-function: ease-out; }
+.recent-card-transition { transition-property: transform, opacity; transition-duration: 220ms; transition-timing-function: cubic-bezier(0.22, 1.12, 0.36, 1); }
+.recent-card-pressed { box-shadow: 0 10px 22px rgba(41, 75, 72, 0.18); }
 .recent-card-head { display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
 .recent-record-title { flex: 1; color: #294b48; font-size: 20px; line-height: 28px; font-weight: 700; }
 .recent-record-dept { margin-left: 10px; border-radius: 12px; background-color: #edf3f1; color: #334b46; padding: 3px 8px; font-size: 10px; line-height: 14px; font-weight: 600; }
@@ -372,12 +588,21 @@ export default {
 .recent-tag { margin-right: 6px; margin-bottom: 4px; border-radius: 10px; background-color: #f3f4f3; color: #52606b; padding: 3px 8px; font-size: 10px; line-height: 14px; }
 .recent-record-time { margin-top: 8px; color: #8a908e; font-size: 11px; line-height: 16px; }
 .home-bottom-space { height: 24px; }
-.card-focus-mask { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background-color: rgba(30, 42, 40, 0.42); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 30; opacity: 1; transition-property: opacity; transition-duration: 240ms; transition-timing-function: ease-out; }
-.card-focus-panel { width: 329px; max-height: 620px; box-sizing: border-box; background-color: #f7fbfa; border-radius: 16px; padding: 22px; display: flex; flex-direction: column; transform: scale(1); transition-property: transform; transition-duration: 320ms; transition-timing-function: ease-out; }
-.card-focus-head { display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
-.card-focus-kicker { color: #547774; font-size: 12px; line-height: 18px; font-weight: 700; }
-.card-focus-close { width: 28px; height: 28px; border-radius: 14px; background-color: #e5edeb; color: #547774; font-size: 20px; line-height: 28px; text-align: center; }
-.card-focus-title { color: #294b48; font-size: 24px; line-height: 34px; font-weight: 700; margin-top: 12px; }
-.card-focus-scroll { flex: 1; margin-top: 14px; }
-.card-focus-content { color: #4e5956; font-size: 16px; line-height: 28px; }
+.shared-card-overlay { position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 40; overflow: hidden; }
+.shared-card-backdrop { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background-color: rgba(244, 247, 246, 0.72); opacity: 1; transition-property: opacity; transition-duration: 360ms; transition-timing-function: ease-out; }
+.shared-card-frost-layer { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background-color: rgba(255, 255, 255, 0.12); opacity: 1; transition-property: opacity; transition-duration: 360ms; transition-timing-function: ease-out; }
+.shared-card-backdrop-hidden { opacity: 0; }
+.shared-card-stage { position: absolute; left: 16px; top: 160px; width: 361px; height: 480px; box-sizing: border-box; overflow: hidden; background-color: #ffffff; transform-origin: 0px 0px; box-shadow: 0 16px 36px rgba(41, 75, 72, 0.22); transition-property: transform, border-radius, box-shadow; transition-duration: 620ms; transition-timing-function: cubic-bezier(0.22, 1.08, 0.36, 1); }
+.shared-card-stage-open { box-shadow: 0 0 0 rgba(41, 75, 72, 0); }
+.shared-card-stage-dragging { transition-duration: 0ms; }
+.shared-card-content-layer { position: absolute; left: 16px; top: 160px; width: 361px; height: 480px; box-sizing: border-box; padding: 16px; display: flex; flex-direction: column; transform-origin: 0px 0px; transition-property: transform; transition-duration: 620ms; transition-timing-function: cubic-bezier(0.22, 1.08, 0.36, 1); }
+.shared-card-summary { display: flex; flex-direction: column; }
+.shared-card-source { margin-top: 2px; color: #66716e; font-size: 13px; line-height: 20px; }
+.shared-detail { flex: 1; margin-top: 28px; padding-top: 16px; border-top-width: 1px; border-top-style: solid; border-top-color: #dce5e2; display: flex; flex-direction: column; opacity: 0; transform: translateY(12px); transition-property: opacity, transform; transition-duration: 240ms; transition-delay: 160ms; transition-timing-function: ease-out; }
+.shared-detail-visible { opacity: 1; transform: translateY(0); }
+.shared-detail-top { display: flex; flex-direction: row; align-items: center; justify-content: space-between; }
+.shared-detail-label { color: #547774; font-size: 12px; line-height: 18px; font-weight: 700; }
+.shared-detail-close { width: 28px; height: 28px; border-radius: 14px; background-color: #e5edeb; color: #547774; font-size: 20px; line-height: 28px; text-align: center; }
+.shared-detail-scroll { flex: 1; margin-top: 14px; }
+.shared-detail-content { color: #4e5956; font-size: 16px; line-height: 28px; }
 </style>
